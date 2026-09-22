@@ -100,6 +100,8 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.PUT, "/empresas/**").hasRole("ADMINISTRADOR")
                 .requestMatchers(HttpMethod.DELETE, "/empresas/**").hasRole("ADMINISTRADOR")
                 .requestMatchers("/admin/**").hasRole("ADMINISTRADOR")
+                // GA7-220501096-AA3-EV01: módulo de Gestión de Usuarios (CRUD completo) — solo administrador
+                .requestMatchers("/api/usuarios/**").hasRole("ADMINISTRADOR")
                 // Paso 6 de la guía: CRUD de usuarios con JDBC puro (UsuarioDAO) — solo administrador
                 .requestMatchers("/dao/**").hasRole("ADMINISTRADOR")
                 .requestMatchers("/analista/**").hasRole("ANALISTA")

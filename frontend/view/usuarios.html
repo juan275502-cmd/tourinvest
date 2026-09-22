@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TourInvest | Gestión de Usuarios (AA3-EV01)</title>
+  <link rel="stylesheet" href="../css/styles.css">
+  <script src="../js/config.js"></script>
+  <script src="../js/app.js" defer></script>
+  <script src="../js/usuarios.js" defer></script>
+</head>
+<body>
+  <div class="app-layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <div aria-hidden="true"><img class="logo-circle" src="../assets/imgs/tourinvest.png" alt="TourInvest"></div>
+        <span>TourInvest</span>
+      </div>
+      <nav aria-label="Navegación del módulo de gestión de usuarios">
+        <a href="./administrador.html" class="sidebar__link">← Volver al panel</a>
+        <a href="#gestion-usuarios" class="sidebar__link sidebar__link--activo">Gestión de Usuarios</a>
+      </nav>
+      <div class="logout"><a href="login.html">Cerrar sesión</a></div>
+    </aside>
+
+    <main class="main-content">
+      <header class="top-header" aria-label="Encabezado de la plataforma">
+        <div class="top-header__inner">
+          <button class="top-header__brand top-header__brand--home" type="button" onclick="location.href='administrador.html'">
+            <img class="top-header__logo" src="../assets/imgs/tourinvest.png" alt="TourInvest logo">
+            <div class="top-header__titles">
+              <h1>TourInvest</h1>
+              <p>Sistema de Inversión Turística</p>
+            </div>
+          </button>
+          <div class="top-header__right">
+            <div class="user-chip">
+              <span class="user-name" id="nombre-usuario-topbar">—</span>
+              <span class="role-badge role-badge--admin" id="rol-usuario-topbar">Administrador</span>
+            </div>
+            <a class="top-header__logout" href="javascript:cerrarSesion()">Cerrar Sesión</a>
+          </div>
+        </div>
+      </header>
+
+      <div class="ti-content-container" id="usuarios-root">
+        <section class="vista vista--activa" data-vista-panel="gestion-usuarios">
+          <div class="panel-role-badge">
+            <span class="panel-role-badge__pill panel-role-badge__pill--admin">Módulo AA3-EV01 · Spring Boot + JPA</span>
+            <span class="panel-role-badge__meta">CRUD de usuarios con roles y estado, persistido en MySQL</span>
+          </div>
+          <div class="panel">
+            <div class="topbar" style="margin-bottom: 14px;">
+              <h3 style="margin: 0;">Gestión de Usuarios</h3>
+              <button class="btn-primary" type="button" style="width: auto;" onclick="abrirModalCrear()">+ Crear usuario</button>
+            </div>
+            <p class="muted" style="margin-top: 0;">
+              Vista → UsuarioAdminController → UsuarioAdminService → UsuarioRepository → MySQL.
+              Consulta, registro, edición, eliminación, asignación de rol y estado de cada usuario.
+            </p>
+            <div class="buscador-usuarios">
+              <input type="text" id="buscar-usuarios" placeholder="Buscar por nombre o correo..." aria-label="Buscar usuarios">
+            </div>
+            <table class="tabla">
+              <thead><tr><th>Nombre</th><th>Correo</th><th>Rol</th><th>Estado</th><th>Acciones</th></tr></thead>
+              <tbody id="tabla-usuarios-cuerpo">
+                <tr><td colspan="5" class="estado-vacio">Cargando...</td></tr>
+              </tbody>
+            </table>
+            <div id="mensaje-usuarios" class="mensaje-global"></div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <!-- Modal Crear/Editar Usuario (módulo AA3-EV01) -->
+  <div class="modal" id="modal-usuario" aria-hidden="true" role="dialog">
+    <div class="modal__backdrop" data-close-modal></div>
+    <div class="modal__card">
+      <div class="modal__header">
+        <h3 id="modal-usuario-titulo">Crear usuario</h3>
+        <button class="modal__close" type="button" onclick="cerrarModalUsuario()" aria-label="Cerrar">✕</button>
+      </div>
+      <div class="modal__body">
+        <div id="mensaje-modal-usuario" class="mensaje-global"></div>
+        <form id="form-usuario" onsubmit="return guardarUsuario(event)">
+          <div class="field">
+            <label for="usuario-nombre">Nombre</label>
+            <input type="text" id="usuario-nombre" name="nombre1" maxlength="30" required>
+          </div>
+          <div class="field">
+            <label for="usuario-apellido">Apellido</label>
+            <input type="text" id="usuario-apellido" name="apellido1" maxlength="100" required>
+          </div>
+          <div class="field">
+            <label for="usuario-cedula">Cédula</label>
+            <input type="text" id="usuario-cedula" name="cedula" maxlength="20" required>
+          </div>
+          <div class="field">
+            <label for="usuario-fecha">Fecha de nacimiento</label>
+            <input type="date" id="usuario-fecha" name="fechaNacimiento" required>
+          </div>
+          <div class="field">
+            <label for="usuario-correo">Correo</label>
+            <input type="email" id="usuario-correo" name="correo" maxlength="120" required>
+          </div>
+          <div class="field">
+            <label for="usuario-contrasena">Contraseña</label>
+            <input type="password" id="usuario-contrasena" name="contrasena" autocomplete="new-password"
+                   placeholder="Vacío = conservar la actual (solo edición)">
+          </div>
+          <div class="field">
+            <!-- Selector de rol: asigna el perfil de acceso del usuario en la tabla roles -->
+            <label for="usuario-rol">Rol</label>
+            <select id="usuario-rol" name="idRol" required>
+              <option value="1">1 · Administrador</option>
+              <option value="2">2 · Analista</option>
+              <option value="3" selected>3 · Inversionista</option>
+            </select>
+          </div>
+          <div class="field">
+            <!-- Selector de estado: solo visible/útil al editar; al crear el usuario entra Activo -->
+            <label for="usuario-estado">Estado (solo edición)</label>
+            <select id="usuario-estado" name="estado" disabled>
+              <option value="">— (conserva el actual en creación)</option>
+              <option value="Activo">Activo</option>
+              <option value="Inactivo">Inactivo</option>
+            </select>
+          </div>
+          <button type="submit" class="btn-primary">Guardar usuario</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
