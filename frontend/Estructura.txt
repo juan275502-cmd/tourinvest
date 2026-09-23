@@ -1,0 +1,318 @@
+================================================================================
+  TOURINVEST · SISTEMA DE INVERSIÓN TURÍSTICA
+  ARQUITECTURA ESTRUCTURAL DEL FRONTEND
+================================================================================
+
+Documento generado a partir del análisis del código fuente (HTML, CSS, JS y
+tests). Referencia: 09/05/2026 · Versión: 1.1 (árbol completo de archivos)
+
+--------------------------------------------------------------------------------
+1. RESUMEN GENERAL
+--------------------------------------------------------------------------------
+
+El frontend de TourInvest es una aplicación SIN framework: HTML5 + CSS3 +
+JavaScript vanilla (módulos ES), organizada en tres capas desacopladas por
+contratos explícitos:
+
+  · Capa de PRESENTACIÓN ..... páginas HTML + hojas CSS
+  · Capa de LÓGICA ........... un driver JavaScript por página
+  · Capa de DATOS ............ backend Java (Spring) en localhost:8080
+                               o datos demo locales (localData.js)
+
+El acople entre capas se hace SOLO a través de:
+  · eventos del DOM .......... onsubmit / onclick
+  · atributos data-* ......... data-vista, data-vista-panel, data-tab-id,
+                               data-open-modal, data-close-modal
+  · ids estables del DOM ..... getElementById(...)
+  · endpoints HTTP ........... fetch() con Authorization: Bearer
+
+No hay router ni store; no hay bundler configurado (el código usa la
+convención de variables de entorno de Vite: import.meta.env.VITE_*).
+
+--------------------------------------------------------------------------------
+2. DIAGRAMA DE CAPAS
+--------------------------------------------------------------------------------
+
+┌─ CAPA 1 · PRESENTACIÓN (HTML + CSS) ─────────────────────────────────────
+│
+│  Landing ....... index.html ....................... css/landing.css
+│  Auth .......... view/login.html · registro.html .. css/styles.css
+│                  view/recuperar.html
+│  Dashboards .... view/inversionista.html
+│                  view/analista.html
+│                  view/administrador.html
+│
+│  Contrato con la capa 2: onsubmit/onclick · data-vista ·
+│  data-vista-panel · data-tab-id · data-open-modal · ids de DOM
+│
+└──────────────┬────────────────────────────────────────────────────────────
+               │  eventos del usuario
+┌──────────────▼─ CAPA 2 · LÓGICA (JavaScript vanilla) ────────────────────
+│
+│  Un driver por página (js/):
+│    auth.js .......................... login · registro · recuperar
+│    dashboard.js ..................... → Inversionista
+│    dashboard_analista.js ............ → Analista
+│    dashboard_administrador.js ....... → Administrador
+│  Compartido:
+│    app.js ........................... TourInvestUI (window global):
+│                                        tabs · modales · toasts
+│
+│  Responsabilidades transversales de los drivers:
+│    · guard de token (sessionStorage)
+│    · llamarApi() con Authorization: Bearer
+│    · navegación de vistas (data-vista / data-vista-panel)
+│    · manejo de 401 → logout + redirect a login
+│
+└──────────────┬────────────────────────────────────────────────────────────
+               │  resolución de datos según VITE_API_MODE
+               │
+               ├── "local" ──► CAPA 3A · DATOS (DEMO)
+               │               js/localData.js: usuarios semilla en
+               │               memoria; getUsers() los devuelve sin
+               │               tocar el backend
+               │
+               └── otro ────► CAPA 3B · DATOS (REAL)
+                               Backend Java (Spring) en VITE_API_URL
+                               (http://localhost:8080 por defecto)
+                               /auth/* · /empresas · /inversionista/*
+                               /analista/* · /admin/*
+
+   TRANSVERSAL · CONFIGURACIÓN Y CALIDAD
+   ├── .env.local ························ VITE_API_MODE · VITE_API_URL
+   └── tests/test_dashboard_wiring.py ···· valida el cableado HTML ↔ JS
+
+--------------------------------------------------------------------------------
+3. ÁRBOL DE CARPETAS Y ARCHIVOS (completo, según el estado actual)
+--------------------------------------------------------------------------------
+
+frontend/
+│
+├── index.html ..................... Landing pública: hero, nosotros,
+│                                  misión/visión, valores, sectores,
+│                                  contacto. Solo carga css/landing.css.
+├── .env.local ..................... VITE_API_MODE=local
+│                                  VITE_API_URL=http://localhost:8080
+├── README.md ...................... Documentación del proyecto (Markdown)
+├── Estructura.txt ................. Este documento
+│
+├── assets/
+│   └── imgs/ ...................... Logos e imágenes
+│       ├── tourinvest.png ......... Logo principal (nav + footer landing)
+│       ├── tourinvest.jpeg ........ Logo alternativo (SIN USAR)
+│       ├── photo-1568489711036-9c94a7d5aea6.avif
+│       │                          Imagen del hero (index.html)
+│       └── photo-1551135049-8a33b5883817.avif  
+│                                  Imagen sección "Nosotros" (index.html)
+├── css/
+│   ├── landing.css ................ Estilos de la landing
+│   ├── styles.css ................. Estilos de auth + dashboards
+│   └── real_theme.css ............. SIN REFERENCIAR por ningún HTML
+│
+├── js/ ............................ Capa lógica (un driver por página)
+│   ├── config.js .................. Config sin bundler (apiMode · apiUrl)
+│   ├── auth.js .................... Consume /auth/login, /auth/registro,
+│   │                              /auth/recuperar y /users
+│   ├── dashboard.js ............... Driver Inversionista
+│   ├── dashboard_analista.js ...... Driver Analista
+│   ├── dashboard_administrador.js . Driver Administrador
+│   ├── usuarios-dao.js ............ Driver página Usuarios · DAO (CRUD JDBC)
+│   ├── localData.js ............... Usuarios semilla (modo demo)
+│   └── app.js ..................... Helpers UI: initTabs · initModals ·
+│                                  toast (window.TourInvestUI)
+│
+├── view/ .......................... Páginas de la aplicación
+│   ├── login.html ................. Inicio de sesión
+│   ├── registro.html .............. Registro (rol público → Inversionista)
+│   ├── recuperar.html ............. Recuperación de contraseña
+│   ├── inversionista.html ......... Dashboard Inversionista
+│   ├── analista.html .............. Dashboard Analista
+│   ├── administrador.html ......... Dashboard Administrador
+│   └── usuarios-dao.html .......... CRUD usuarios con JDBC (módulo DAO)
+│
+└── tests/ ......................... Pruebas (Python 3 + unittest)
+    ├── test_dashboard_wiring.py ... Suite de cableado HTML ↔ JS
+    ├── __init__.py ................ Marca el paquete Python de tests
+    └── __pycache__/ ............... Caché de compilación (autogenerado)
+        ├── test_dashboard_wiring.cpython-312.pyc
+        ├── test_dashboard_wiring.cpython-314.pyc
+        └── __init__.cpython-312.pyc
+
+Resumen: 7 carpetas · 32 archivos (3 autogenerados en __pycache__).
+
+
+--------------------------------------------------------------------------------
+4. INVENTARIO DE COMPONENTES Y RESPONSABILIDADES
+--------------------------------------------------------------------------------
+
+PRESENTACIÓN
+  index.html                Landing pública; enlaza a view/login.html
+  view/login.html           form#loginForm (onsubmit → iniciarSesion)
+  view/registro.html        campos: nombre1, apellido1, cedula,
+                            fechaNacimiento, correo, contrasena,
+                            confirmarContrasena
+  view/recuperar.html       campo: correo
+  view/inversionista.html   vistas: portafolio · alertas · noticias ·
+                            empresas · perfil
+  view/analista.html        vistas: empresas · indicadores · reportes ·
+                            recomendaciones · perfil
+  view/administrador.html   vistas: usuarios · empresas · roles ·
+                            auditorias · configuracion
+
+LÓGICA
+  js/auth.js                iniciarSesion · registrarUsuario ·
+                            solicitarRecuperacion (funciones globales
+                            invocadas desde los onsubmit del HTML)
+  js/dashboard.js           resumen del portafolio · empresas ·
+                            alertas (crear/cancelar) · inversiones
+  js/dashboard_analista.js  empresas (selector) · indicadores de
+                            liquidez · reportes (listar/crear)
+  js/dashboard_administrador.js
+                            usuarios (listar/suspender/activar) ·
+                            empresas (listar/detalle/eliminar)
+  js/app.js                 window.TourInvestUI: initTabs ·
+                            initModals · toast · showToast (compat.)
+
+DATOS
+  js/localData.js           3 usuarios demo (roles: inversionista,
+                            analista, admin · contraseña 123456)
+  Backend Java :8080        /auth/* · /users · /empresas[/{id}]
+                            /inversionista/* · /analista/* · /admin/*
+
+--------------------------------------------------------------------------------
+5. FLUJO DE NAVEGACIÓN Y DE DATOS
+--------------------------------------------------------------------------------
+
+index.html ── "Acceder al Sistema" ──► view/login.html
+                                           │
+                    POST /auth/login       │
+             { token, rol } ◄──────────────┘
+                    │
+                    │  sessionStorage: tourinvest_token · _nombre ·
+                    │  _correo · _rol
+                    │
+                    │  redirección según RUTA_DASHBOARD[rol]
+        ┌───────────┼────────────────┐
+        ▼           ▼                ▼
+  Administrador   Analista      Inversionista
+  administrador   analista      inversionista
+      .html         .html          .html
+        └───────────┼────────────────┘
+                    ▼
+     driver dashboard*.js (valida el token)
+                    │
+                    │  llamarApi() + Bearer <token>
+                    ▼
+             API backend :8080 ── 401 ──► sessionStorage.clear()
+                                          + redirect a login.html
+
+Paso a paso:
+  1. El usuario interactúa con la capa 1 (formularios onsubmit,
+     enlaces laterales data-vista).
+  2. El driver JS de esa página ejecuta la acción (capa 2).
+  3. Según VITE_API_MODE, el driver usa localData.js (demo) o llama
+     al backend con fetch + Bearer (real).
+  4. El resultado muta el DOM (tablas, indicadores, toasts); el
+     estado de sesión vive en sessionStorage (se limpia al cerrar
+     la pestaña).
+  5. Sin token → redirect a login.html; con 401 → logout.
+
+
+--------------------------------------------------------------------------------
+6. GRAFO DE DEPENDENCIAS (lo que carga realmente cada página)
+--------------------------------------------------------------------------------
+
+view/login.html · registro.html · recuperar.html
+      └─► js/auth.js ─────────► ./data/localData (*)
+
+view/inversionista.html ─► js/app.js + js/dashboard.js ─────────────┐
+view/analista.html       ─► js/app.js + js/dashboard_analista.js ───┼─► ./data/localData (*)
+view/administrador.html  ─► js/app.js + js/dashboard_administrador.js ┘
+
+index.html ─► css/landing.css (sin JavaScript)
+css/real_theme.css ── (sin referenciar por ningún HTML)
+
+(*) El import apunta a "./data/localData", pero el archivo vive en
+    js/localData.js — ver Observaciones (sección 9).
+
+
+--------------------------------------------------------------------------------
+7. CONTRATOS ENTRE CAPAS
+--------------------------------------------------------------------------------
+
+HTML ↔ JS (cableado declarativo)
+  data-vista ................. enlace lateral del dashboard (destino)
+  data-vista-panel ........... panel/vista de destino (mismo valor)
+  data-tab-id / data-tab-target ... pestañas dentro de un contenedor
+  data-open-modal / data-close-modal ... apertura y cierre de modales
+  ids de DOM ................. todo getElementById del driver debe
+                               existir en su HTML (lo validan los tests)
+  name de los campos ......... el driver lee formulario.<name>.value
+
+JS ↔ DATOS (HTTP)
+  Cabecera ................... Authorization: Bearer <token>
+  Content-Type ............... application/json
+  401 ........................ logout automático (sessionStorage.clear)
+  Errores de validación ...... { errores: { campo: mensaje } } →
+                               .field--error + .field__mensaje-error
+  Mensaje global ............. #mensaje-global
+                               (.mensaje-global--error / --exito)
+  Avisos no bloqueantes ...... TourInvestUI.toast(msg, success|error)
+
+ESTADO DE SESIÓN (sessionStorage)
+  tourinvest_token ........... token emitido por el backend
+  tourinvest_nombre .......... primer nombre del usuario
+  tourinvest_correo .......... correo del usuario
+  tourinvest_rol ............. rol (Administrador|Analista|Inversionista)
+
+
+--------------------------------------------------------------------------------
+8. CONFIGURACIÓN Y CALIDAD
+--------------------------------------------------------------------------------
+
+Variables de entorno (convención Vite, leídas con import.meta.env):
+  VITE_API_MODE ... "local" activa el modo demo sin backend
+  VITE_API_URL .... URL base de la API (http://localhost:8080)
+
+Suite de pruebas (Python 3 + unittest):
+  comando: py -m unittest discover -s tests -v
+  valida:  · cada dashboard carga su driver correcto
+           · todos los getElementById del driver existen en el HTML
+           · vistas data-vista-panel esperadas por rol
+           · campos name requeridos en los formularios
+           · ausencia de vocabulario antiguo (.campo__)
+           · páginas de auth cargan js/auth.js y sus campos
+  estado:  ACTUALMENTE FALLA (8 errores) — ver sección 9
+
+
+--------------------------------------------------------------------------------
+9. OBSERVACIONES ACTUALES (DEUDA TÉCNICA)
+--------------------------------------------------------------------------------
+
+  [1] tests/test_dashboard_wiring.py busca los HTML en la raíz del
+      proyecto, pero hoy viven en view/; además espera src="js/..."
+      mientras las páginas usan src="../js/...". Los 8 tests fallan.
+  [2] RESUELTO — localData.js expone window.LocalData y los drivers lo
+      leen como global; ya no existen imports de "./data/localData".
+  [3] RESUELTO — js/config.js (window.TourInvestConfig) sustituye a
+      import.meta.env; los drivers ya no usan import/export/import.meta
+      y funcionan como scripts clásicos en cualquier servidor estático.
+  [4] empresasCache solo se recarga cuando está vacío.
+  [5] formatearMoneda usa USD; evaluar COP (contexto colombiano).
+  [6] css/real_theme.css no es referenciado por ninguna página.
+  [7] Imágenes sin usar: assets/imgs/tourinvest.jpeg y
+      assets/imgs/photo-1714974528737-3e6c7e4d11af.avif.
+  [8] css/landing.css:149 usa url(frontend/assets/photo-1568489711036-...):
+      la ruta relativa no incluye imgs/ y se resuelve dentro de css/,
+      por lo que ese fondo no carga (el hero se apoya en el <img> del
+      index.html, que sí usa la ruta correcta assets/imgs/...).
+  [9] Módulo DAO (paso 6 de la guía) integrado con el backend real:
+      backend-servlets añade com.tourinvest.backend.dao (DatabaseConnection
+      + Usuario + UsuarioDAO con JDBC puro, PreparedStatement y BCrypt) y
+      el controlador REST UsuarioDaoController (/dao/usuarios, solo
+      Administrador), consumido por view/usuarios-dao.html +
+      js/usuarios-dao.js, enlazado desde el panel de administrador.
+
+================================================================================
+  Fin del documento · TourInvest Frontend · Bogotá, Colombia
+================================================================================

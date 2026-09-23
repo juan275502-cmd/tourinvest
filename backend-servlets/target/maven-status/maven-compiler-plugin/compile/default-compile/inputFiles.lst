@@ -4,6 +4,7 @@ C:\Users\juan2\OneDrive\Escritorio\Tourinvest\backend-servlets\src\main\java\com
 C:\Users\juan2\OneDrive\Escritorio\Tourinvest\backend-servlets\src\main\java\com\tourinvest\backend\controller\AuthController.java
 C:\Users\juan2\OneDrive\Escritorio\Tourinvest\backend-servlets\src\main\java\com\tourinvest\backend\controller\EmpresaController.java
 C:\Users\juan2\OneDrive\Escritorio\Tourinvest\backend-servlets\src\main\java\com\tourinvest\backend\controller\InversionistaController.java
+C:\Users\juan2\OneDrive\Escritorio\Tourinvest\backend-servlets\src\main\java\com\tourinvest\backend\controller\UsuarioAdminController.java
 C:\Users\juan2\OneDrive\Escritorio\Tourinvest\backend-servlets\src\main\java\com\tourinvest\backend\controller\UsuarioDaoController.java
 C:\Users\juan2\OneDrive\Escritorio\Tourinvest\backend-servlets\src\main\java\com\tourinvest\backend\dao\DatabaseConnection.java
 C:\Users\juan2\OneDrive\Escritorio\Tourinvest\backend-servlets\src\main\java\com\tourinvest\backend\dao\Usuario.java
@@ -24,6 +25,7 @@ C:\Users\juan2\OneDrive\Escritorio\Tourinvest\backend-servlets\src\main\java\com
 C:\Users\juan2\OneDrive\Escritorio\Tourinvest\backend-servlets\src\main\java\com\tourinvest\backend\dto\ReporteRequest.java
 C:\Users\juan2\OneDrive\Escritorio\Tourinvest\backend-servlets\src\main\java\com\tourinvest\backend\dto\ReporteResumenDTO.java
 C:\Users\juan2\OneDrive\Escritorio\Tourinvest\backend-servlets\src\main\java\com\tourinvest\backend\dto\ResumenPortafolioResponse.java
+C:\Users\juan2\OneDrive\Escritorio\Tourinvest\backend-servlets\src\main\java\com\tourinvest\backend\dto\UsuarioAdminRequest.java
 C:\Users\juan2\OneDrive\Escritorio\Tourinvest\backend-servlets\src\main\java\com\tourinvest\backend\dto\UsuarioResumenDTO.java
 C:\Users\juan2\OneDrive\Escritorio\Tourinvest\backend-servlets\src\main\java\com\tourinvest\backend\exception\GlobalExceptionHandler.java
 C:\Users\juan2\OneDrive\Escritorio\Tourinvest\backend-servlets\src\main\java\com\tourinvest\backend\jdbc\ConexionJDBC.java
@@ -56,6 +58,7 @@ C:\Users\juan2\OneDrive\Escritorio\Tourinvest\backend-servlets\src\main\java\com
 C:\Users\juan2\OneDrive\Escritorio\Tourinvest\backend-servlets\src\main\java\com\tourinvest\backend\service\EmpresaService.java
 C:\Users\juan2\OneDrive\Escritorio\Tourinvest\backend-servlets\src\main\java\com\tourinvest\backend\service\PortafolioService.java
 C:\Users\juan2\OneDrive\Escritorio\Tourinvest\backend-servlets\src\main\java\com\tourinvest\backend\service\ReporteService.java
+C:\Users\juan2\OneDrive\Escritorio\Tourinvest\backend-servlets\src\main\java\com\tourinvest\backend\service\UsuarioAdminService.java
 C:\Users\juan2\OneDrive\Escritorio\Tourinvest\backend-servlets\src\main\java\com\tourinvest\backend\TourinvestBackendApplication.java
 C:\Users\juan2\OneDrive\Escritorio\Tourinvest\backend-servlets\src\main\java\com\tourinvest\servlets\EmpresaServlet.java
 C:\Users\juan2\OneDrive\Escritorio\Tourinvest\backend-servlets\src\main\java\com\tourinvest\servlets\LoginServlet.java

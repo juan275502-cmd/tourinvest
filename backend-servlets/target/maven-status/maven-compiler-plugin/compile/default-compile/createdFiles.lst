@@ -6,14 +6,17 @@ com\tourinvest\backend\service\EmpresaService.class
 com\tourinvest\backend\repository\RolRepository.class
 com\tourinvest\backend\repository\InversionRepository.class
 com\tourinvest\backend\repository\AccionRepository.class
+com\tourinvest\backend\service\UsuarioAdminService.class
 com\tourinvest\backend\repository\ReporteRepository.class
 com\tourinvest\backend\controller\AlertaController.class
 com\tourinvest\backend\controller\EmpresaController.class
 com\tourinvest\backend\model\Usuario.class
 com\tourinvest\backend\dao\UsuarioDAO.class
+com\tourinvest\backend\dto\UsuarioAdminRequest.class
 com\tourinvest\backend\dto\AlertaRequest.class
 com\tourinvest\backend\dto\PosicionDTO.class
 com\tourinvest\backend\repository\EmpresaRepository.class
+com\tourinvest\backend\controller\UsuarioAdminController.class
 com\tourinvest\backend\model\Rol$NombreRol.class
 com\tourinvest\backend\security\JwtUtil.class
 com\tourinvest\backend\dto\AlertaResumenDTO.class

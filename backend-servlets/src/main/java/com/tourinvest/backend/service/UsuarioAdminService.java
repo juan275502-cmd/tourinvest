@@ -1,14 +1,13 @@
 package com.tourinvest.backend.service;
 
-import java.time.LocalDate;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.tourinvest.backend.dto.UsuarioAdminRequest;
 import com.tourinvest.backend.dto.UsuarioResumenDTO;
@@ -16,8 +15,6 @@ import com.tourinvest.backend.model.Rol;
 import com.tourinvest.backend.model.Usuario;
 import com.tourinvest.backend.repository.RolRepository;
 import com.tourinvest.backend.repository.UsuarioRepository;
-import org.springframework.http.HttpStatus;
-import org.springframework.web.server.ResponseStatusException;
 
 /**
  * GA7-220501096-AA3-EV01 — Lógica de negocio del módulo de Gestión de Usuarios.
