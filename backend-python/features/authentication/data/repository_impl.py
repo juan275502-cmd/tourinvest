@@ -12,12 +12,18 @@ from features.authentication.domain.repository import UsuarioRepository
 class UsuarioRepositoryImpl(UsuarioRepository):
 
     def autenticar(self, correo: str, password: str):
+        """
+        # Verifica credenciales contra la base de datos.
+        # Compara correo (sin distinguir mayúsculas/minúsculas) y password exacto.
+        # Retorna un objeto Usuario si son válidas, o None si no.
+        """
         for u in USUARIOS_DB:
             if u["correo"].lower() == correo.lower() and u["password"] == password:
                 return Usuario(
                     id=u["id"], nombre=u["nombre"], apellido=u["apellido"],
                     cedula=u["cedula"], correo=u["correo"], rol=u["rol"], estado=u["estado"]
                 )
+        # Ningún usuario coincidió con correo + password
         return None
 
     def registrar(self, datos: dict):
