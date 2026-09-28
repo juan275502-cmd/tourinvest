@@ -1,5 +1,9 @@
 package com.tourinvest.backend.controller;
 
+import org.junit.jupiter.api.AfterEach;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tourinvest.backend.dto.PosicionDTO;
 import com.tourinvest.backend.dto.ResumenPortafolioResponse;
@@ -67,6 +71,13 @@ class InversionistaControllerTest {
         usuarioAutenticado.setCorreo("carlos@tourinvest.com");
         usuarioAutenticado.setContrasena("$2a$10$hash");
         usuarioAutenticado.setRol(rolInversionista);
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(usuarioAutenticado, null, usuarioAutenticado.getAuthorities()));
+    }
+
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
     }
 
     @Test

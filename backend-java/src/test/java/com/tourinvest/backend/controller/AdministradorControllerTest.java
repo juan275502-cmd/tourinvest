@@ -1,5 +1,9 @@
 package com.tourinvest.backend.controller;
 
+import org.junit.jupiter.api.AfterEach;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -58,6 +62,13 @@ class AdministradorControllerTest {
         administradorAutenticado.setCorreo("carlos@tourinvest.com");
         administradorAutenticado.setContrasena("$2a$10$hash");
         administradorAutenticado.setRol(rolAdmin);
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(administradorAutenticado, null, administradorAutenticado.getAuthorities()));
+    }
+
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
     }
 
     @Test

@@ -1,0 +1,20 @@
+# Target directories (build outputs)
+target/
+**/target/
+*.class
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# IDE / Editor
+.idea/
+*.iml
+.vscode/
+*.log
+
+# OS
+.DS_Store
+Thumbs.db

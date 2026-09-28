@@ -1,0 +1,677 @@
+{
+  "info": {
+    "name": "TourInvest Backend API",
+    "description": "Colección completa de endpoints para TourInvest Spring Boot API (:8080). Incluye autenticación JWT, perfil por roles, empresas, portafolio, alertas, reportes de analista y administración de auditoría/usuarios.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Autenticación",
+      "item": [
+        {
+          "name": "Login Administrador",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.token) {",
+                  "    pm.environment.set('token_admin', jsonData.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"correo\": \"carlos@tourinvest.com\",\n  \"contrasena\": \"123456\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Login Analista",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.token) {",
+                  "    pm.environment.set('token_analista', jsonData.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"correo\": \"laura@tourinvest.com\",\n  \"contrasena\": \"123456\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Login Inversionista",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.token) {",
+                  "    pm.environment.set('token_inversionista', jsonData.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"correo\": \"juan@tourinvest.com\",\n  \"contrasena\": \"123456\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Registro Usuario",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre1\": \"Prueba\",\n  \"apellido1\": \"Usuario\",\n  \"correo\": \"nuevo@tourinvest.com\",\n  \"contrasena\": \"123456\",\n  \"idRol\": 3\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/registro",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "registro"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Recuperar Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"correo\": \"juan@tourinvest.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/recuperar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "recuperar"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Empresas",
+      "item": [
+        {
+          "name": "Listar Empresas",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_inversionista}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/empresas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "empresas"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Obtener Detalle Empresa",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_inversionista}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/empresas/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "empresas",
+                "1"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Crear Empresa (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"simbolo\": \"HOTEL\",\n  \"nombre\": \"Cadena Hotelera Caribe\",\n  \"sector\": \"Hoteler\\u00eda\",\n  \"pais\": \"Colombia\",\n  \"precio\": 45000.0,\n  \"descripcion\": \"Cadena de resorts tur\\u00edsticos.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/empresas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "empresas"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Actualizar Empresa (Admin)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"simbolo\": \"HOTEL\",\n  \"nombre\": \"Cadena Hotelera Caribe Internacional\",\n  \"sector\": \"Hoteler\\u00eda\",\n  \"pais\": \"Colombia\",\n  \"precio\": 48000.0,\n  \"descripcion\": \"Expansi\\u00f3n internacional.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/empresas/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "empresas",
+                "1"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Eliminar Empresa (Admin)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/empresas/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "empresas",
+                "1"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Inversionista",
+      "item": [
+        {
+          "name": "Resumen Portafolio",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_inversionista}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/inversionista/resumen",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "inversionista",
+                "resumen"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Posiciones",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_inversionista}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/inversionista/posiciones",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "inversionista",
+                "posiciones"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Agregar Inversión",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_inversionista}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idEmpresa\": 1,\n  \"cantidad\": 10,\n  \"precioCompra\": 150.0\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/inversionista/inversiones",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "inversionista",
+                "inversiones"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar Alertas",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_inversionista}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/inversionista/alertas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "inversionista",
+                "alertas"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Crear Alerta",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_inversionista}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idEmpresa\": 1,\n  \"precioObjetivo\": 200.0,\n  \"tipo\": \"Superior\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/inversionista/alertas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "inversionista",
+                "alertas"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Cancelar Alerta",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_inversionista}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/inversionista/alertas/1/cancelar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "inversionista",
+                "alertas",
+                "1",
+                "cancelar"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Analista",
+      "item": [
+        {
+          "name": "Listar Reportes",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_analista}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/analista/reportes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "analista",
+                "reportes"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Crear Reporte",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_analista}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idEmpresa\": 1,\n  \"titulo\": \"An\\u00e1lisis Q3\",\n  \"descripcion\": \"Proyecciones positivas.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/analista/reportes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "analista",
+                "reportes"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Calcular Indicador Liquidez",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_analista}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"activoCorriente\": 120000.0,\n  \"pasivoCorriente\": 80000.0\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/analista/indicadores/liquidez",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "analista",
+                "indicadores",
+                "liquidez"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Administrador",
+      "item": [
+        {
+          "name": "Listar Usuarios",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/usuarios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "usuarios"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Suspender Usuario",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/usuarios/3/suspender",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "usuarios",
+                "3",
+                "suspender"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Activar Usuario",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/usuarios/3/activar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "usuarios",
+                "3",
+                "activar"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar Auditoría",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/auditoria",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "auditoria"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "token_admin",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "token_analista",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "token_inversionista",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}

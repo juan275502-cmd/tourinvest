@@ -178,4 +178,17 @@ public class Usuario implements UserDetails {
     public boolean isEnabled() {
         return estado == EstadoUsuario.Activo;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Usuario usuario = (Usuario) o;
+        return java.util.Objects.equals(idUsuario, usuario.idUsuario);
+    }
+
+    @Override
+    public int hashCode() {
+        return java.util.Objects.hash(idUsuario);
+    }
 }
