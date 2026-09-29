@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TourInvest | Dashboard Administrador</title>
+  <link rel="icon" type="image/png" href="../assets/imgs/tourinvest.jpeg">
+  <link rel="stylesheet" href="../css/styles.css?v=2">
+  <script src="../js/app.js" defer></script>
+  <script src="../js/perfil.js" defer></script>
+  <script src="../js/dashboard_administrador.js" defer></script>
+  <script src="../js/usuarios.js" defer></script>
+</head>
+<body>
+  <div class="app-layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <div aria-hidden="true"><img class="logo-circle" src="../assets/imgs/tourinvest.png" alt="TourInvest"></div>
+        <span>TourInvest</span>
+      </div>
+      <nav aria-label="Navegación de administrador">
+        <a href="#usuarios" class="sidebar__link sidebar__link--activo" data-vista="usuarios">Usuarios</a>
+        <a href="#empresas" class="sidebar__link" data-vista="empresas">Empresas</a>
+        <a href="#roles" class="sidebar__link" data-vista="roles">Roles</a>
+        <a href="#auditorias" class="sidebar__link" data-vista="auditorias">Auditorías</a>
+        <a href="#configuracion" class="sidebar__link" data-vista="configuracion">Configuración</a>
+      </nav>
+      <div class="logout"><a href="../index.html">Cerrar sesión</a></div>
+    </aside>
+
+    <main class="main-content">
+      <header class="top-header" aria-label="Encabezado de la plataforma">
+        <div class="top-header__inner">
+          <button class="top-header__brand top-header__brand--home" type="button" onclick="location.href='../index.html'">
+            <img class="top-header__logo" src="../assets/imgs/tourinvest.png" alt="TourInvest logo">
+            <div class="top-header__titles">
+              <h1>TourInvest</h1>
+              <p>Sistema de Inversión Turística</p>
+            </div>
+          </button>
+          <div class="top-header__right">
+            <div class="user-chip">
+              <span class="user-name" id="nombre-usuario-topbar">—</span>
+              <span class="role-badge role-badge--admin" id="rol-usuario-topbar">Administrador</span>
+            </div>
+            <a class="top-header__logout" href="javascript:cerrarSesion()">Cerrar Sesión</a>
+          </div>
+        </div>
+      </header>
+
+      <div class="ti-content-container" id="admin-root">
+
+        <section class="vista vista--activa" data-vista-panel="usuarios">
+          <div class="panel-role-badge">
+            <span class="panel-role-badge__pill panel-role-badge__pill--admin">Panel de Administrador</span>
+            <span class="panel-role-badge__meta">Gestión, acceso y trazabilidad</span>
+          </div>
+          <div class="panel">
+            <div class="topbar" style="margin-bottom: 14px;">
+              <h3 style="margin: 0;">Gestión de Usuarios</h3>
+              <button class="btn-primary" type="button" style="width: auto; padding: 10px 16px;" onclick="TourInvestUI.Usuarios.abrir(null)">+ Crear usuario</button>
+            </div>
+            <div class="buscador-usuarios">
+              <input type="text" id="buscar-usuarios" placeholder="Buscar por nombre o correo..." aria-label="Buscar usuarios">
+            </div>
+            <table class="tabla">
+              <thead><tr><th>Nombre</th><th>Correo</th><th>Rol</th><th>Estado</th><th>Acciones</th></tr></thead>
+              <tbody id="tabla-usuarios-cuerpo">
+                <tr><td colspan="5" class="estado-vacio">Cargando...</td></tr>
+              </tbody>
+            </table>
+            <p class="muted" style="margin-top: 10px; font-size: 12px;">Un usuario con datos asociados (portafolios, alertas o reportes) no se puede eliminar: suspensionelo.</p>
+          </div>
+        </section>
+
+        <!-- VISTA: Empresas (Gestión de Empresas — CRUD, mockup 6.9) -->
+        <section class="vista" data-vista-panel="empresas">
+          <div class="panel">
+            <div class="topbar" style="margin-bottom: 14px;">
+              <h3 style="margin: 0;">Gestión de Empresas</h3>
+              <button class="btn-primary" type="button" style="width: auto; padding: 10px 16px;" onclick="abrirModalCrearEmpresa()">+ Crear empresa</button>
+            </div>
+            <table class="tabla">
+              <thead><tr><th>Símbolo</th><th>Nombre</th><th>Sector</th><th>País</th><th>Precio</th><th>Variación</th><th>Acciones</th></tr></thead>
+              <tbody id="tabla-empresas-admin-cuerpo">
+                <tr><td colspan="7" class="estado-vacio">Cargando...</td></tr>
+              </tbody>
+            </table>
+            <p class="muted" style="margin-top: 10px; font-size: 12px;">Nota: no se puede eliminar una empresa que tenga inversiones o alertas de usuarios asociadas (protección de datos).</p>
+          </div>
+        </section>
+
+        <section class="vista" data-vista-panel="roles">
+          <div class="panel">
+            <h3>Roles del sistema</h3>
+            <table class="tabla">
+              <thead><tr><th>Rol</th><th>Permisos</th></tr></thead>
+              <tbody>
+                <tr><td>Administrador</td><td>Gestionar usuarios, roles y auditorías</td></tr>
+                <tr><td>Analista</td><td>Gestionar empresas, crear análisis, generar reportes</td></tr>
+                <tr><td>Inversionista</td><td>Consultar portafolio, alertas y noticias</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="vista" data-vista-panel="auditorias">
+          <div class="panel">
+            <h3>Auditorías</h3>
+            <table class="tabla">
+              <thead><tr><th>Fecha</th><th>Usuario</th><th>Acción</th></tr></thead>
+              <tbody>
+                <tr><td>2026-07-05</td><td>María Gómez</td><td>Creó un nuevo análisis</td></tr>
+                <tr><td>2026-07-04</td><td>Carlos Ruiz</td><td>Suspendió al usuario Luis Torres</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="vista" data-vista-panel="configuracion">
+          <div class="panel">
+            <h3>Mi perfil</h3>
+            <p class="muted">Estos son tus datos. Puedes editarlos cuando quieras; el rol y el estado los asigna el Administrador.</p>
+            <p><strong>Nombre:</strong> <span id="perfil-nombre">—</span></p>
+            <p><strong>Rol:</strong> <span id="perfil-rol">—</span></p>
+            <p><strong>Correo:</strong> <span id="perfil-correo">—</span></p>
+            <p><strong>Cédula:</strong> <span id="perfil-cedula">—</span></p>
+            <p><strong>Fecha de nacimiento:</strong> <span id="perfil-nacimiento">—</span></p>
+            <p><strong>Registrado el:</strong> <span id="perfil-registro">—</span></p>
+            <button class="btn-primary" type="button" style="width: auto; padding: 10px 16px; margin-top: 10px;" onclick="TourInvestUI.Perfil.abrirModal()">Editar mi perfil</button>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- Modal Crear/Editar Empresa (Gestión de Empresas) -->
+  <div class="modal" id="modal-empresa-admin" aria-hidden="true" role="dialog">
+    <div class="modal__backdrop" data-close-modal></div>
+    <div class="modal__card">
+      <div class="modal__header">
+        <h3 id="modal-empresa-titulo">Crear empresa</h3>
+        <button class="modal__close" type="button" onclick="cerrarModalEmpresaAdmin()" aria-label="Cerrar">✕</button>
+      </div>
+      <div class="modal__body">
+        <div id="mensaje-empresa" class="mensaje-global"></div>
+        <form id="form-empresa" onsubmit="return guardarEmpresa(event)">
+          <div class="field">
+            <label for="empresa-nombre">Nombre</label>
+            <input type="text" id="empresa-nombre" name="nombre" maxlength="120" required>
+          </div>
+          <div class="field">
+            <label for="empresa-simbolo">Símbolo (ticker)</label>
+            <input type="text" id="empresa-simbolo" name="simbolo" maxlength="10" required>
+          </div>
+          <div class="field">
+            <label for="empresa-sector">Sector</label>
+            <input type="text" id="empresa-sector" name="sector" maxlength="80" required>
+          </div>
+          <div class="field">
+            <label for="empresa-pais">País</label>
+            <input type="text" id="empresa-pais" name="pais" maxlength="80" required>
+          </div>
+          <div class="field">
+            <label for="empresa-precio">Precio actual (USD)</label>
+            <input type="number" step="0.01" min="0.01" id="empresa-precio" name="precio" required>
+          </div>
+          <button type="submit" class="btn-primary">Guardar empresa</button>
+        </form>
+      </div>
+    </div>
+  </div>
+<!-- Modal Editar mi perfil (compartido por los 3 roles) -->
+<div class="modal" id="modal-perfil" aria-hidden="true" role="dialog">
+  <div class="modal__backdrop" data-close-modal onclick="TourInvestUI.Perfil.cerrarModal()"></div>
+  <div class="modal__card">
+    <div class="modal__header">
+      <h3>Editar mi perfil</h3>
+      <button class="modal__close" type="button" onclick="TourInvestUI.Perfil.cerrarModal()" aria-label="Cerrar">✕</button>
+    </div>
+    <div class="modal__body">
+      <div id="mensaje-perfil" class="mensaje-global"></div>
+      <p class="muted" style="font-size: 12px;">Solo puedes editar tu propio perfil. El rol y el estado los asigna el Administrador.</p>
+      <form id="form-perfil" onsubmit="return TourInvestUI.Perfil.guardar(event)">
+        <div class="field">
+          <label for="perfil-form-nombre">Nombre</label>
+          <input type="text" id="perfil-form-nombre" name="nombre1" maxlength="30" required>
+        </div>
+        <div class="field">
+          <label for="perfil-form-apellido">Apellido</label>
+          <input type="text" id="perfil-form-apellido" name="apellido1" maxlength="100" required>
+        </div>
+        <div class="field">
+          <label for="perfil-form-cedula">Cédula</label>
+          <input type="text" id="perfil-form-cedula" name="cedula" maxlength="20" required>
+        </div>
+        <div class="field">
+          <label for="perfil-form-nacimiento">Fecha de nacimiento</label>
+          <input type="date" id="perfil-form-nacimiento" name="fechaNacimiento" required>
+        </div>
+        <div class="field">
+          <label for="perfil-form-correo">Correo (es tu usuario de acceso)</label>
+          <input type="email" id="perfil-form-correo" name="correo" maxlength="120" required>
+        </div>
+        <button type="submit" class="btn-primary">Guardar cambios</button>
+      </form>
+
+      <hr style="margin: 20px 0; border: none; border-top: 1px solid var(--borde, #d8dee9);">
+
+      <h4 style="margin: 0 0 8px;">Cambiar contraseña</h4>
+      <form id="form-perfil-clave" onsubmit="return TourInvestUI.Perfil.cambiarContrasena(event)">
+        <div class="field">
+          <label for="perfil-clave-actual">Contraseña actual</label>
+          <input type="password" id="perfil-clave-actual" name="contrasenaActual" required>
+        </div>
+        <div class="field">
+          <label for="perfil-clave-nueva">Nueva contraseña (mínimo 6)</label>
+          <input type="password" id="perfil-clave-nueva" name="contrasenaNueva" minlength="6" required>
+        </div>
+        <button type="submit" class="btn-primary">Cambiar contraseña</button>
+      </form>
+    </div>
+  </div>
+</div>
+  <!-- Modal Crear/Editar Usuario (CRUD de usuarios) -->
+  <div class="modal" id="modal-usuario" aria-hidden="true" role="dialog">
+    <div class="modal__backdrop" data-close-modal onclick="cerrarModalUsuario()"></div>
+    <div class="modal__card">
+      <div class="modal__header">
+        <h3 id="modal-usuario-titulo">Crear usuario</h3>
+        <button class="modal__close" type="button" onclick="cerrarModalUsuario()" aria-label="Cerrar">&#10005;</button>
+      </div>
+      <div class="modal__body">
+        <div id="mensaje-usuario" class="mensaje-global"></div>
+        <form id="form-usuario" onsubmit="return TourInvestUI.Usuarios.guardar(event)">
+          <div class="field">
+            <label for="usuario-nombre">Nombre</label>
+            <input type="text" id="usuario-nombre" name="nombre1" maxlength="30" required>
+          </div>
+          <div class="field">
+            <label for="usuario-apellido">Apellido</label>
+            <input type="text" id="usuario-apellido" name="apellido1" maxlength="100" required>
+          </div>
+          <div class="field">
+            <label for="usuario-cedula">Cédula</label>
+            <input type="text" id="usuario-cedula" name="cedula" maxlength="20">
+          </div>
+          <div class="field">
+            <label for="usuario-nacimiento">Fecha de nacimiento</label>
+            <input type="date" id="usuario-nacimiento" name="fechaNacimiento">
+          </div>
+          <div class="field">
+            <label for="usuario-correo">Correo</label>
+            <input type="email" id="usuario-correo" name="correo" maxlength="120" required>
+          </div>
+          <div class="field">
+            <label for="usuario-contrasena">Contraseña (al crear es obligatoria)</label>
+            <input type="password" id="usuario-contrasena" name="contrasena" minlength="6">
+          </div>
+          <div class="field">
+            <label for="usuario-rol">Rol</label>
+            <select id="usuario-rol" name="rol" required>
+              <option value="Administrador">Administrador</option>
+              <option value="Analista">Analista</option>
+              <option value="Inversionista">Inversionista</option>
+            </select>
+          </div>
+          <button type="submit" class="btn-primary">Guardar</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
+
+
+git add .
+git commit -m "Eliminacion de duplicidad, funcionalidad con postman, correccion de vistas"
+git push origin main

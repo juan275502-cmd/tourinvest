@@ -1,29 +1,79 @@
 {
   "info": {
+    "_postman_id": "b7f1c2a4-5d6e-4f80-9a1b-2c3d4e5f6a7b",
     "name": "TourInvest Backend API",
-    "description": "Colección completa de endpoints para TourInvest Spring Boot API (:8080). Incluye autenticación JWT, perfil por roles, empresas, portafolio, alertas, reportes de analista y administración de auditoría/usuarios.",
+    "description": "Coleccion oficial de la API REST de TourInvest (Spring Boot :8080).\n\nORDEN DE PRUEBA: ejecuta primero la carpeta **0. Salud** y despues **1. Autenticacion**; los tres logins guardan su token automaticamente, asi que el resto de peticiones ya viajan con el encabezado `Authorization: Bearer`.\n\nPRERREQUISITOS\n- API levantada (setup run-backend) y base `tourinvest` sembrada (setup seed).\n- Selecciona el entorno **TourInvest Local**.\n- Usuarios semilla (clave `123456`), segun query.sql:\n    kike@tourinvest.com     Administrador\n    marlen@tourinvest.com   Analista\n    juan@tourinvest.com     Inversionista\n\nIMPORTANTE: la API usa SIEMPRE el campo `contrasena` (sin tilde) en login y registro. Enviando `password` la respuesta es 400.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token_inversionista}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "if (!pm.environment.get('baseUrl')) {",
+          "  pm.environment.set(\"baseUrl\", \"http://www.tourinvest.com:8080\");",
+          "}"
+        ]
+      }
+    }
+  ],
   "item": [
     {
-      "name": "Autenticación",
+      "name": "0. Salud",
+      "item": [
+        {
+          "name": "Health check (sin token)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "health"
+              ]
+            },
+            "description": "Verifica que la API y la base de datos estan vivas. No requiere token. Responde 200 si todo esta UP y 503 si la BD no responde."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Health check responde 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('La base de datos esta UP', function () {",
+                  "    pm.expect(pm.response.json().baseDatos).to.eql('UP');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "1. Autenticacion",
+      "description": "Logins de los tres roles. Cada uno guarda su token en una variable distinta.",
       "item": [
         {
           "name": "Login Administrador",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "var jsonData = pm.response.json();",
-                  "if (jsonData.token) {",
-                  "    pm.environment.set('token_admin', jsonData.token);",
-                  "}"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
           "request": {
             "method": "POST",
             "header": [
@@ -34,7 +84,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"correo\": \"carlos@tourinvest.com\",\n  \"contrasena\": \"123456\"\n}"
+              "raw": "{\n  \"correo\": \"kike@tourinvest.com\",\n  \"contrasena\": \"123456\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/auth/login",
@@ -45,25 +95,31 @@
                 "auth",
                 "login"
               ]
+            },
+            "description": "Autentica al administrador y guarda el token en `token_admin`. Responde 200 con {token, nombre1, correo, rol}."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Login administrador responde 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "const json = pm.response.json();",
+                  "pm.test('Devuelve token y rol Administrador', function () {",
+                  "    pm.expect(json.token).to.be.a('string');",
+                  "    pm.expect(json.rol).to.eql('Administrador');",
+                  "});",
+                  "pm.environment.set('token_admin', json.token);"
+                ]
+              }
             }
-          }
+          ]
         },
         {
           "name": "Login Analista",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "var jsonData = pm.response.json();",
-                  "if (jsonData.token) {",
-                  "    pm.environment.set('token_analista', jsonData.token);",
-                  "}"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
           "request": {
             "method": "POST",
             "header": [
@@ -74,7 +130,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"correo\": \"laura@tourinvest.com\",\n  \"contrasena\": \"123456\"\n}"
+              "raw": "{\n  \"correo\": \"marlen@tourinvest.com\",\n  \"contrasena\": \"123456\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/auth/login",
@@ -85,25 +141,30 @@
                 "auth",
                 "login"
               ]
-            }
-          }
-        },
-        {
-          "name": "Login Inversionista",
+            },
+            "description": "Autentica a la analista y guarda el token en `token_analista`."
+          },
           "event": [
             {
               "listen": "test",
               "script": {
+                "type": "text/javascript",
                 "exec": [
-                  "var jsonData = pm.response.json();",
-                  "if (jsonData.token) {",
-                  "    pm.environment.set('token_inversionista', jsonData.token);",
-                  "}"
-                ],
-                "type": "text/javascript"
+                  "pm.test('Login analista responde 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "const json = pm.response.json();",
+                  "pm.test('Devuelve rol Analista', function () {",
+                  "    pm.expect(json.rol).to.eql('Analista');",
+                  "});",
+                  "pm.environment.set('token_analista', json.token);"
+                ]
               }
             }
-          ],
+          ]
+        },
+        {
+          "name": "Login Inversionista",
           "request": {
             "method": "POST",
             "header": [
@@ -125,11 +186,30 @@
                 "auth",
                 "login"
               ]
+            },
+            "description": "Autentica al inversionista y guarda el token en `token_inversionista` (usado por defecto en la Coleccion)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Login inversionista responde 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "const json = pm.response.json();",
+                  "pm.test('Devuelve rol Inversionista', function () {",
+                  "    pm.expect(json.rol).to.eql('Inversionista');",
+                  "});",
+                  "pm.environment.set('token_inversionista', json.token);"
+                ]
+              }
             }
-          }
+          ]
         },
         {
-          "name": "Registro Usuario",
+          "name": "Login con clave incorrecta (401)",
           "request": {
             "method": "POST",
             "header": [
@@ -140,7 +220,46 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"nombre1\": \"Prueba\",\n  \"apellido1\": \"Usuario\",\n  \"correo\": \"nuevo@tourinvest.com\",\n  \"contrasena\": \"123456\",\n  \"idRol\": 3\n}"
+              "raw": "{\n  \"correo\": \"kike@tourinvest.com\",\n  \"contrasena\": \"claveIncorrecta\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Credenciales invalidas responden 401', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Registro de usuario",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre1\": \"Ana\",\n  \"apellido1\": \"Restrepo\",\n  \"cedula\": \"1009876543\",\n  \"fechaNacimiento\": \"1997-04-12\",\n  \"correo\": \"ana.reposo@correo.com\",\n  \"contrasena\": \"123456\",\n  \"confirmarContrasena\": \"123456\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/auth/registro",
@@ -151,11 +270,32 @@
                 "auth",
                 "registro"
               ]
+            },
+            "description": "Registro publico: siempre crea un **Inversionista** (rol fijo por seguridad). `cedula`, `fechaNacimiento` y `confirmarContrasena` son obligatorios. Responde 201 con el resumen del usuario; si el correo o la cedula ya existen, 400 (cambia el correo si repites la prueba)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Registro responde 201 o 400 si el correo ya existe', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([201, 400]);",
+                  "});",
+                  "if (pm.response.code === 201) {",
+                  "    const json = pm.response.json();",
+                  "    pm.test('El usuario creado es Inversionista y Activo', function () {",
+                  "        pm.expect(json.rol).to.eql('Inversionista');",
+                  "        pm.expect(json.estado).to.eql('Activo');",
+                  "    });",
+                  "}"
+                ]
+              }
             }
-          }
+          ]
         },
         {
-          "name": "Recuperar Password",
+          "name": "Recuperar password",
           "request": {
             "method": "POST",
             "header": [
@@ -177,24 +317,73 @@
                 "auth",
                 "recuperar"
               ]
+            },
+            "description": "Por seguridad responde 200 exista o no el correo (no revela si esta registrado). Devuelve {mensaje}."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Recuperar password responde 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Devuelve mensaje', function () {",
+                  "    pm.expect(pm.response.json()).to.have.property('mensaje');",
+                  "});"
+                ]
+              }
             }
-          }
+          ]
+        },
+        {
+          "name": "Acceder sin token (401)",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/empresas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "empresas"
+              ]
+            },
+            "description": "Prueba negativa de seguridad: sin Authorization debe responder 401 con cuerpo JSON."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Sin token responde 401', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "pm.test('El cuerpo de error es JSON', function () {",
+                  "    pm.expect(pm.response.json()).to.have.property('mensaje');",
+                  "});"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
     {
-      "name": "Empresas",
+      "name": "2. Empresas",
+      "description": "Consultar funciona para cualquier autenticado; crear, editar y borrar exigen ROLE_ADMINISTRADOR.",
       "item": [
         {
-          "name": "Listar Empresas",
+          "name": "Listar empresas",
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token_inversionista}}"
-              }
-            ],
+            "header": [],
             "url": {
               "raw": "{{baseUrl}}/empresas",
               "host": [
@@ -204,47 +393,214 @@
                 "empresas"
               ]
             }
-          }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Listar empresas responde 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Devuelve un arreglo', function () {",
+                  "    pm.expect(pm.response.json()).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
-          "name": "Obtener Detalle Empresa",
+          "name": "Detalle de empresa",
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token_inversionista}}"
-              }
-            ],
+            "header": [],
             "url": {
-              "raw": "{{baseUrl}}/empresas/1",
+              "raw": "{{baseUrl}}/empresas/{{id_empresa}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "empresas",
-                "1"
+                "{{id_empresa}}"
               ]
+            },
+            "description": "Devuelve la empresa con su cotización. Un id inexistente responde 404."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Detalle de empresa responde 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Incluye el simbolo', function () {",
+                  "    pm.expect(pm.response.json()).to.have.property('simbolo');",
+                  "});"
+                ]
+              }
             }
-          }
+          ]
         },
         {
-          "name": "Crear Empresa (Admin)",
+          "name": "Crear empresa (solo Admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_admin}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Cadena Hotelera Caribe\",\n  \"simbolo\": \"HCTL\",\n  \"sector\": \"Hotelería\",\n  \"pais\": \"Colombia\",\n  \"precio\": 45000.00\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/empresas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "empresas"
+              ]
+            },
+            "description": "Crea la empresa junto con su cotización. Responde 201. Un símbolo ya existente responde 400; con token de otro rol, 403."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Crear empresa responde 201 o 400 si el simbolo ya existe', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([201, 400]);",
+                  "});",
+                  "if (pm.response.code === 201) {",
+                  "    pm.environment.set('id_empresa', pm.response.json().idEmpresa);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Actualizar empresa (solo Admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_admin}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Cadena Hotelera Caribe Internacional\",\n  \"simbolo\": \"HCTL\",\n  \"sector\": \"Hotelería\",\n  \"pais\": \"Colombia\",\n  \"precio\": 48000.00\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/empresas/{{id_empresa}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "empresas",
+                "{{id_empresa}}"
+              ]
+            },
+            "description": "PUT completo: todos los campos son obligatorios. Responde 200."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Actualizar empresa responde 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Eliminar empresa (solo Admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_admin}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/empresas/{{id_empresa}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "empresas",
+                "{{id_empresa}}"
+              ]
+            },
+            "description": "Responde 200 con {mensaje}. Si la empresa tiene inversiones o alertas asociadas responde 400 (integridad referencial): borra primero la empresa creada en \"Crear empresa\"."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Eliminar empresa responde 200 o 400 si tiene datos asociados', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 400]);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear empresa sin permisos (403)",
           "request": {
             "method": "POST",
             "header": [
               {
-                "key": "Authorization",
-                "value": "Bearer {{token_admin}}"
-              },
-              {
                 "key": "Content-Type",
                 "value": "application/json"
               }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"simbolo\": \"HOTEL\",\n  \"nombre\": \"Cadena Hotelera Caribe\",\n  \"sector\": \"Hoteler\\u00eda\",\n  \"pais\": \"Colombia\",\n  \"precio\": 45000.0,\n  \"descripcion\": \"Cadena de resorts tur\\u00edsticos.\"\n}"
+              "raw": "{\n  \"nombre\": \"No Permitida\",\n  \"simbolo\": \"NPER\",\n  \"sector\": \"Prueba\",\n  \"pais\": \"Colombia\",\n  \"precio\": 100.00\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/empresas",
@@ -254,76 +610,34 @@
               "path": [
                 "empresas"
               ]
-            }
-          }
-        },
-        {
-          "name": "Actualizar Empresa (Admin)",
-          "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token_admin}}"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"simbolo\": \"HOTEL\",\n  \"nombre\": \"Cadena Hotelera Caribe Internacional\",\n  \"sector\": \"Hoteler\\u00eda\",\n  \"pais\": \"Colombia\",\n  \"precio\": 48000.0,\n  \"descripcion\": \"Expansi\\u00f3n internacional.\"\n}"
             },
-            "url": {
-              "raw": "{{baseUrl}}/empresas/1",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "empresas",
-                "1"
-              ]
-            }
-          }
-        },
-        {
-          "name": "Eliminar Empresa (Admin)",
-          "request": {
-            "method": "DELETE",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token_admin}}"
+            "description": "Prueba negativa: con el token por defecto (Inversionista) debe responder 403."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Un Inversionista no puede crear empresas (403)', function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});"
+                ]
               }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/empresas/1",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "empresas",
-                "1"
-              ]
             }
-          }
+          ]
         }
       ]
     },
     {
-      "name": "Inversionista",
+      "name": "3. Inversionista",
+      "description": "Usa el token del Inversionista. Endpoints bajo /inversionista/**.",
       "item": [
         {
-          "name": "Resumen Portafolio",
+          "name": "Resumen del portafolio",
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token_inversionista}}"
-              }
-            ],
+            "header": [],
             "url": {
               "raw": "{{baseUrl}}/inversionista/resumen",
               "host": [
@@ -333,40 +647,35 @@
                 "inversionista",
                 "resumen"
               ]
-            }
-          }
-        },
-        {
-          "name": "Posiciones",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token_inversionista}}"
+            },
+            "description": "Resumen del inversionista AUTENTICADO (nunca el de otro usuario) con sus posiciones y alertas activas."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Resumen responde 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "const json = pm.response.json();",
+                  "pm.test('Incluye nombre del usuario y los totales', function () {",
+                  "    pm.expect(json).to.have.property('nombreUsuario');",
+                  "    pm.expect(json).to.have.property('valorTotal');",
+                  "    pm.expect(json).to.have.property('totalInvertido');",
+                  "    pm.expect(json).to.have.property('rendimientoTotalPorcentual');",
+                  "});"
+                ]
               }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/inversionista/posiciones",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "inversionista",
-                "posiciones"
-              ]
             }
-          }
+          ]
         },
         {
-          "name": "Agregar Inversión",
+          "name": "Agregar inversion",
           "request": {
             "method": "POST",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token_inversionista}}"
-              },
               {
                 "key": "Content-Type",
                 "value": "application/json"
@@ -374,30 +683,85 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"idEmpresa\": 1,\n  \"cantidad\": 10,\n  \"precioCompra\": 150.0\n}"
+              "raw": "{\n  \"idAccion\": 1,\n  \"cantidad\": 5\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/inversionista/inversiones",
+              "raw": "{{baseUrl}}/inversionista/portafolio/inversiones",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "inversionista",
+                "portafolio",
+                "inversiones"
+              ]
+            },
+            "description": "Usa `idAccion` (NO idEmpresa) y `cantidad`. El precio de compra lo toma del mercado. Si el usuario no tiene portafolio se le crea uno. Responde 201 con la posicion; cantidad menor a 1 da 400 y un idAccion inexistente da 404."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Agregar inversion responde 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "const json = pm.response.json();",
+                  "pm.test('Devuelve la posicion creada', function () {",
+                  "    pm.expect(json).to.have.property('simbolo');",
+                  "    pm.expect(json).to.have.property('cantidad');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Agregar inversion con accion inexistente (404)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idAccion\": 9999,\n  \"cantidad\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/inversionista/portafolio/inversiones",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "inversionista",
+                "portafolio",
                 "inversiones"
               ]
             }
-          }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Accion inexistente responde 404', function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
-          "name": "Listar Alertas",
+          "name": "Listar alertas",
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token_inversionista}}"
-              }
-            ],
+            "header": [],
             "url": {
               "raw": "{{baseUrl}}/inversionista/alertas",
               "host": [
@@ -408,17 +772,33 @@
                 "alertas"
               ]
             }
-          }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Listar alertas responde 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "const alertas = pm.response.json();",
+                  "pm.test('Devuelve un arreglo', function () {",
+                  "    pm.expect(alertas).to.be.an('array');",
+                  "});",
+                  "if (alertas.length > 0) {",
+                  "    pm.environment.set('id_alerta', alertas[0].idAlerta);",
+                  "}"
+                ]
+              }
+            }
+          ]
         },
         {
-          "name": "Crear Alerta",
+          "name": "Crear alerta",
           "request": {
             "method": "POST",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token_inversionista}}"
-              },
               {
                 "key": "Content-Type",
                 "value": "application/json"
@@ -426,7 +806,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"idEmpresa\": 1,\n  \"precioObjetivo\": 200.0,\n  \"tipo\": \"Superior\"\n}"
+              "raw": "{\n  \"idAccion\": 1,\n  \"precioObjetivo\": 220.00\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/inversionista/alertas",
@@ -437,48 +817,80 @@
                 "inversionista",
                 "alertas"
               ]
+            },
+            "description": "Usa `idAccion` y `precioObjetivo`, ambos obligatorios. Responde 201."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Crear alerta responde 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "if (pm.response.code === 201) {",
+                  "    pm.environment.set('id_alerta', pm.response.json().idAlerta);",
+                  "}"
+                ]
+              }
             }
-          }
+          ]
         },
         {
-          "name": "Cancelar Alerta",
+          "name": "Cancelar alerta",
           "request": {
             "method": "PATCH",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token_inversionista}}"
-              }
-            ],
+            "header": [],
             "url": {
-              "raw": "{{baseUrl}}/inversionista/alertas/1/cancelar",
+              "raw": "{{baseUrl}}/inversionista/alertas/{{id_alerta}}/cancelar",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "inversionista",
                 "alertas",
-                "1",
+                "{{id_alerta}}",
                 "cancelar"
               ]
+            },
+            "description": "Usa PATCH (por eso CORS debe permitirlo). Responde 204 sin cuerpo. Cancelar la alerta de otro usuario responde 400."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Cancelar alerta responde 204', function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});"
+                ]
+              }
             }
-          }
+          ]
         }
       ]
     },
     {
-      "name": "Analista",
+      "name": "4. Analista",
+      "description": "Usa el token de la Analista. Endpoints bajo /analista/** (exigen ROLE_ANALISTA).",
       "item": [
         {
-          "name": "Listar Reportes",
+          "name": "Listar reportes",
           "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_analista}}",
+                  "type": "string"
+                }
+              ]
+            },
             "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token_analista}}"
-              }
-            ],
+            "header": [],
             "url": {
               "raw": "{{baseUrl}}/analista/reportes",
               "host": [
@@ -489,17 +901,36 @@
                 "reportes"
               ]
             }
-          }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Listar reportes responde 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
-          "name": "Crear Reporte",
+          "name": "Crear reporte",
           "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_analista}}",
+                  "type": "string"
+                }
+              ]
+            },
             "method": "POST",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token_analista}}"
-              },
               {
                 "key": "Content-Type",
                 "value": "application/json"
@@ -507,7 +938,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"idEmpresa\": 1,\n  \"titulo\": \"An\\u00e1lisis Q3\",\n  \"descripcion\": \"Proyecciones positivas.\"\n}"
+              "raw": "{\n  \"idEmpresa\": 1,\n  \"titulo\": \"Análisis Q3 - Apple\",\n  \"descripcion\": \"Proyecciones positivas para el siguiente trimestre.\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/analista/reportes",
@@ -518,18 +949,43 @@
                 "analista",
                 "reportes"
               ]
+            },
+            "description": "El autor es SIEMPRE la analista autenticada. `idEmpresa` y `titulo` son obligatorios. Responde 201 con {nombreEmpresa, autor, fechaGeneracion}."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Crear reporte responde 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "const json = pm.response.json();",
+                  "pm.test('Devuelve la empresa y el autor', function () {",
+                  "    pm.expect(json).to.have.property('nombreEmpresa');",
+                  "    pm.expect(json).to.have.property('autor');",
+                  "});"
+                ]
+              }
             }
-          }
+          ]
         },
         {
-          "name": "Calcular Indicador Liquidez",
+          "name": "Calcular indicador de liquidez",
           "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_analista}}",
+                  "type": "string"
+                }
+              ]
+            },
             "method": "POST",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token_analista}}"
-              },
               {
                 "key": "Content-Type",
                 "value": "application/json"
@@ -537,7 +993,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"activoCorriente\": 120000.0,\n  \"pasivoCorriente\": 80000.0\n}"
+              "raw": "{\n  \"activoCorriente\": 120000.00,\n  \"pasivoCorriente\": 80000.00\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/analista/indicadores/liquidez",
@@ -549,24 +1005,98 @@
                 "indicadores",
                 "liquidez"
               ]
+            },
+            "description": "Calcula activoCorriente / pasivoCorriente con 4 decimales. No persiste nada. Con estos datos devuelve 1.5000."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Liquidez responde 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('El resultado es 1.5', function () {",
+                  "    pm.expect(pm.response.json().liquidezCorriente).to.eql(1.5);",
+                  "});"
+                ]
+              }
             }
-          }
+          ]
+        },
+        {
+          "name": "Liquidez con pasivo en cero (400)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_analista}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"activoCorriente\": 120000.00,\n  \"pasivoCorriente\": 0\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/analista/indicadores/liquidez",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "analista",
+                "indicadores",
+                "liquidez"
+              ]
+            },
+            "description": "La division por cero se controla: responde 400, no 500."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Division por cero controlada: 400 y no 500', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
     {
-      "name": "Administrador",
+      "name": "5. Administrador",
+      "description": "Usa el token del Administrador. Endpoints bajo /admin/** (exigen ROLE_ADMINISTRADOR).",
       "item": [
         {
-          "name": "Listar Usuarios",
+          "name": "Listar usuarios",
           "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_admin}}",
+                  "type": "string"
+                }
+              ]
+            },
             "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token_admin}}"
-              }
-            ],
+            "header": [],
             "url": {
               "raw": "{{baseUrl}}/admin/usuarios",
               "host": [
@@ -577,77 +1107,515 @@
                 "usuarios"
               ]
             }
-          }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Listar usuarios responde 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "const usuarios = pm.response.json();",
+                  "pm.test('Devuelve un arreglo con rol y estado', function () {",
+                  "    pm.expect(usuarios).to.be.an('array');",
+                  "    if (usuarios.length > 0) {",
+                  "        pm.expect(usuarios[0]).to.have.property('rol');",
+                  "        pm.expect(usuarios[0]).to.have.property('estado');",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
-          "name": "Suspender Usuario",
+          "name": "Suspender usuario",
           "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_admin}}",
+                  "type": "string"
+                }
+              ]
+            },
             "method": "PATCH",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token_admin}}"
-              }
-            ],
+            "header": [],
             "url": {
-              "raw": "{{baseUrl}}/admin/usuarios/3/suspender",
+              "raw": "{{baseUrl}}/admin/usuarios/{{id_usuario}}/suspender",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "admin",
                 "usuarios",
-                "3",
+                "{{id_usuario}}",
                 "suspender"
               ]
+            },
+            "description": "Tras suspender, ese usuario ya no puede autenticarse. Usa un id distinto del 1."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Suspender usuario responde 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('El estado pasa a Inactivo', function () {",
+                  "    pm.expect(pm.response.json().estado).to.eql('Inactivo');",
+                  "});"
+                ]
+              }
             }
-          }
+          ]
         },
         {
-          "name": "Activar Usuario",
+          "name": "Activar usuario",
           "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_admin}}",
+                  "type": "string"
+                }
+              ]
+            },
             "method": "PATCH",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token_admin}}"
-              }
-            ],
+            "header": [],
             "url": {
-              "raw": "{{baseUrl}}/admin/usuarios/3/activar",
+              "raw": "{{baseUrl}}/admin/usuarios/{{id_usuario}}/activar",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "admin",
                 "usuarios",
-                "3",
+                "{{id_usuario}}",
                 "activar"
               ]
             }
-          }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Activar usuario responde 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('El estado pasa a Activo', function () {",
+                  "    pm.expect(pm.response.json().estado).to.eql('Activo');",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
-          "name": "Listar Auditoría",
+          "name": "Auto-suspension bloqueada (400)",
           "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token_admin}}"
-              }
-            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_admin}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
             "url": {
-              "raw": "{{baseUrl}}/admin/auditoria",
+              "raw": "{{baseUrl}}/admin/usuarios/1/suspender",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "admin",
-                "auditoria"
+                "usuarios",
+                "1",
+                "suspender"
+              ]
+            },
+            "description": "El administrador (id 1) no puede suspenderse a si mismo: responde 400."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Auto-suspension responde 400', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "6. Perfil propio",
+      "description": "Disponible para los TRES roles. Cada usuario edita solo SU perfil: el backend no recibe id, lo resuelve del token JWT.",
+      "item": [
+        {
+          "name": "Ver mi perfil",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_inversionista}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/perfil",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "perfil"
               ]
             }
-          }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Perfil responde 200', function () { pm.response.to.have.status(200); });",
+                  "const p = pm.response.json();",
+                  "pm.test('Devuelve mis datos y mi rol', function () {",
+                  "    pm.expect(p).to.have.property('nombreCompleto');",
+                  "    pm.expect(p).to.have.property('rol');",
+                  "    pm.expect(p).to.have.property('cedula');",
+                  "});",
+                  "pm.test('Nunca expone la contrasena', function () {",
+                  "    pm.expect(p).to.not.have.property('contrasena');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Actualizar mi perfil",
+          "request": {
+            "method": "PUT",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_inversionista}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre1\": \"Juan\",\n  \"apellido1\": \"Fuentes Soto\",\n  \"cedula\": \"1001234567\",\n  \"fechaNacimiento\": \"1998-11-27\",\n  \"correo\": \"juan@tourinvest.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/perfil",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "perfil"
+              ]
+            },
+            "description": "Rellena o corrige tus datos. NO acepta rol/estado/id: se ignoran (son del Administrador)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Actualizar perfil responde 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cambiar contrasena con la actual incorrecta (400)",
+          "request": {
+            "method": "PATCH",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_inversionista}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"contrasenaActual\": \"esta-no-es-la-mia\",\n  \"contrasenaNueva\": \"nuevaClave123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/perfil/contrasena",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "perfil",
+                "contrasena"
+              ]
+            },
+            "description": "Prueba NEGATIVA: no cambia ninguna clave real, asi que se puede repetir cuantas veces quieras. Para cambiar tu contrasena de verdad, usa la vista Perfil del dashboard (o esta peticion con tu clave actual)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Contrasena actual incorrecta responde 400', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "7. CRUD Usuarios",
+      "description": "Exclusivo del Administrador (token_admin). Crear, editar y eliminar usuarios, y asignar su rol.",
+      "item": [
+        {
+          "name": "Crear usuario",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_admin}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre1\": \"Ana\",\n  \"apellido1\": \"Restrepo\",\n  \"cedula\": \"1009876543\",\n  \"fechaNacimiento\": \"1997-04-12\",\n  \"correo\": \"ana.reposo@correo.com\",\n  \"contrasena\": \"123456\",\n  \"rol\": \"Analista\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/usuarios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "usuarios"
+              ]
+            },
+            "description": "Aqui el Administrador SI elige el rol (el registro publico siempre crea Inversionista). Responde 201."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Crear usuario responde 201 (o 400 si ya existe)', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([201, 400]);",
+                  "});",
+                  "if (pm.response.code === 201) {",
+                  "    pm.environment.set('id_usuario_nuevo', pm.response.json().idUsuario);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "description": "Aqui el Administrador SI elige el rol (el registro publico siempre crea Inversionista). Responde 201. Si el correo ya existe responde 400: cambia el correo o ejecuta de nuevo `setup seed` para reiniciar la base."
+        },
+        {
+          "name": "Editar usuario",
+          "request": {
+            "method": "PUT",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_admin}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre1\": \"Ana\",\n  \"apellido1\": \"Restrepo Editada\",\n  \"cedula\": \"1009876543\",\n  \"fechaNacimiento\": \"1997-04-12\",\n  \"correo\": \"ana.reposo@correo.com\",\n  \"rol\": \"Inversionista\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/usuarios/{{id_usuario_nuevo}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "usuarios",
+                "{{id_usuario_nuevo}}"
+              ]
+            },
+            "description": "Edita al usuario creado en la peticion anterior (variable id_usuario_nuevo). La contrasena es opcional: si no la mandas, el usuario conserva la suya. Si 'Crear usuario' devolvio 400 porque ya existia, ejecuta antes `setup seed` para reiniciar la base."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Editar usuario responde 200 (o 404 si no se creo antes)', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 404]);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Eliminar usuario",
+          "request": {
+            "method": "DELETE",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_admin}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/usuarios/{{id_usuario_nuevo}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "usuarios",
+                "{{id_usuario_nuevo}}"
+              ]
+            },
+            "description": "Responde 400 si el usuario tiene datos asociados o si es el ultimo Administrador."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Eliminar responde 200, 400 (datos asociados) o 404', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 400, 404]);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear usuario sin permisos (403)",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token_analista}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre1\": \"No\",\n  \"apellido1\": \"Permitido\",\n  \"cedula\": \"1020304050\",\n  \"fechaNacimiento\": \"1990-01-01\",\n  \"correo\": \"no.permitido@correo.com\",\n  \"contrasena\": \"123456\",\n  \"rol\": \"Administrador\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/usuarios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "usuarios"
+              ]
+            },
+            "description": "Con el token por defecto (Inversionista) debe responder 403."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Un no-Administrador no puede crear usuarios (403)', function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "description": "Usa el token de la Analista: esta autenticada pero no es ADMINISTRADOR, por eso da 403."
         }
       ]
     }
@@ -655,21 +1623,31 @@
   "variable": [
     {
       "key": "baseUrl",
-      "value": "http://localhost:8080",
+      "value": "http://www.tourinvest.com:8080",
       "type": "string"
     },
     {
-      "key": "token_admin",
-      "value": "",
+      "key": "id_usuario",
+      "value": "3",
       "type": "string"
     },
     {
-      "key": "token_analista",
-      "value": "",
+      "key": "id_empresa",
+      "value": "1",
       "type": "string"
     },
     {
-      "key": "token_inversionista",
+      "key": "id_accion",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "id_alerta",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "id_usuario_nuevo",
       "value": "",
       "type": "string"
     }

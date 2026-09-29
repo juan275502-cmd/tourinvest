@@ -67,7 +67,7 @@ class AuthServiceTest {
         usuarioValido.setApellido1("Fuentes");
         usuarioValido.setCedula("1001234567");
         usuarioValido.setFechaNacimiento(LocalDate.of(2002, 11, 27));
-        usuarioValido.setCorreo("juan@tourinvest.com");
+        usuarioValido.setCorreo("kike@tourinvest.com");
         usuarioValido.setContrasena("$2a$10$hashSimulado");
     }
 
@@ -77,29 +77,29 @@ class AuthServiceTest {
     @DisplayName("login: con credenciales válidas devuelve token, nombre y rol")
     void login_credencialesValidas_devuelveLoginResponse() {
         LoginRequest request = new LoginRequest();
-        request.setCorreo("juan@tourinvest.com");
+        request.setCorreo("kike@tourinvest.com");
         request.setContrasena("123456");
 
         when(authenticationManager.authenticate(any())).thenReturn(authentication);
-        when(usuarioRepository.findByCorreo("juan@tourinvest.com")).thenReturn(Optional.of(usuarioValido));
-        when(jwtUtil.generarToken("juan@tourinvest.com", "Inversionista")).thenReturn("token-simulado-123");
+        when(usuarioRepository.findByCorreo("kike@tourinvest.com")).thenReturn(Optional.of(usuarioValido));
+        when(jwtUtil.generarToken("kike@tourinvest.com", "Inversionista")).thenReturn("token-simulado-123");
 
         LoginResponse respuesta = authService.login(request);
 
         assertThat(respuesta.getToken()).isEqualTo("token-simulado-123");
         assertThat(respuesta.getNombre1()).isEqualTo("Juan");
-        assertThat(respuesta.getCorreo()).isEqualTo("juan@tourinvest.com");
+        assertThat(respuesta.getCorreo()).isEqualTo("kike@tourinvest.com");
         assertThat(respuesta.getRol()).isEqualTo("Inversionista");
 
         verify(authenticationManager).authenticate(any());
-        verify(jwtUtil).generarToken("juan@tourinvest.com", "Inversionista");
+        verify(jwtUtil).generarToken("kike@tourinvest.com", "Inversionista");
     }
 
     @Test
     @DisplayName("login: si el AuthenticationManager rechaza las credenciales, lanza BadCredentialsException")
     void login_credencialesInvalidas_lanzaBadCredentialsException() {
         LoginRequest request = new LoginRequest();
-        request.setCorreo("juan@tourinvest.com");
+        request.setCorreo("kike@tourinvest.com");
         request.setContrasena("clave-incorrecta");
 
         when(authenticationManager.authenticate(any()))
@@ -135,11 +135,11 @@ class AuthServiceTest {
     @DisplayName("registrar: con datos válidos, hashea la contraseña y guarda como Inversionista")
     void registrar_datosValidos_guardaUsuarioConRolInversionista() {
         Usuario nuevo = new Usuario();
-        nuevo.setCorreo("nuevo@tourinvest.com");
+        nuevo.setCorreo("kike@tourinvest.com");
         nuevo.setCedula("9998887776");
         nuevo.setContrasena("claveEnTextoPlano");
 
-        when(usuarioRepository.existsByCorreo("nuevo@tourinvest.com")).thenReturn(false);
+        when(usuarioRepository.existsByCorreo("kike@tourinvest.com")).thenReturn(false);
         when(usuarioRepository.existsByCedula("9998887776")).thenReturn(false);
         when(rolRepository.findByNombre(Rol.NombreRol.Inversionista)).thenReturn(Optional.of(rolInversionista));
         when(passwordEncoder.encode("claveEnTextoPlano")).thenReturn("$2a$10$hashGenerado");
@@ -163,10 +163,10 @@ class AuthServiceTest {
     @DisplayName("registrar: con correo ya existente, lanza IllegalArgumentException y no llega a guardar")
     void registrar_correoDuplicado_lanzaIllegalArgumentException() {
         Usuario nuevo = new Usuario();
-        nuevo.setCorreo("juan@tourinvest.com");
+        nuevo.setCorreo("kike@tourinvest.com");
         nuevo.setCedula("1112223334");
 
-        when(usuarioRepository.existsByCorreo("juan@tourinvest.com")).thenReturn(true);
+        when(usuarioRepository.existsByCorreo("kike@tourinvest.com")).thenReturn(true);
 
         assertThatThrownBy(() -> authService.registrar(nuevo, Rol.NombreRol.Inversionista))
                 .isInstanceOf(IllegalArgumentException.class)

@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.hamcrest.Matchers.hasSize;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -18,7 +19,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import org.springframework.test.web.servlet.MockMvc;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -69,9 +69,15 @@ class AlertaControllerTest {
         usuarioAutenticado = new Usuario();
         usuarioAutenticado.setIdUsuario(3);
         usuarioAutenticado.setNombre1("Carlos");
-        usuarioAutenticado.setCorreo("carlos@tourinvest.com");
+        usuarioAutenticado.setCorreo("juan@tourinvest.com");
         usuarioAutenticado.setContrasena("$2a$10$hash");
         usuarioAutenticado.setRol(rolInversionista);
+    }
+
+    /** Evita que el contexto de autenticacion de un test contamine al siguiente. */
+    @AfterEach
+    void limpiarContexto() {
+        AutenticadoComo.limpiar();
     }
 
     @Test
@@ -80,7 +86,7 @@ class AlertaControllerTest {
         when(alertaService.listarPorUsuario(eq(usuarioAutenticado))).thenReturn(List.of(
                 new AlertaResumenDTO(1, "AAPL", new BigDecimal("210.00"), new BigDecimal("195.50"), Alerta.EstadoAlerta.Activa)));
 
-        mockMvc.perform(get("/inversionista/alertas").with(user(usuarioAutenticado)))
+        mockMvc.perform(get("/inversionista/alertas").with(AutenticadoComo.usuario(usuarioAutenticado)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath("$[0].simbolo").value("AAPL"))
@@ -94,7 +100,7 @@ class AlertaControllerTest {
                 new AlertaResumenDTO(5, "TSLA", new BigDecimal("300.00"), new BigDecimal("250.80"), Alerta.EstadoAlerta.Activa));
 
         mockMvc.perform(post("/inversionista/alertas")
-                        .with(user(usuarioAutenticado))
+                        .with(AutenticadoComo.usuario(usuarioAutenticado))
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(Map.of("idAccion", 4, "precioObjetivo", 300.00))))
                 .andExpect(status().isCreated())
@@ -106,7 +112,7 @@ class AlertaControllerTest {
     @DisplayName("POST /inversionista/alertas: con precio objetivo en cero, responde 400 sin llamar al servicio")
     void crear_precioObjetivoInvalido_devuelve400() throws Exception {
         mockMvc.perform(post("/inversionista/alertas")
-                        .with(user(usuarioAutenticado))
+                        .with(AutenticadoComo.usuario(usuarioAutenticado))
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(Map.of("idAccion", 4, "precioObjetivo", 0))))
                 .andExpect(status().isBadRequest())
@@ -118,7 +124,7 @@ class AlertaControllerTest {
     @Test
     @DisplayName("PATCH /inversionista/alertas/{id}/cancelar: con alerta propia, responde 204")
     void cancelar_alertaPropia_devuelve204() throws Exception {
-        mockMvc.perform(patch("/inversionista/alertas/1/cancelar").with(user(usuarioAutenticado)))
+        mockMvc.perform(patch("/inversionista/alertas/1/cancelar").with(AutenticadoComo.usuario(usuarioAutenticado)))
                 .andExpect(status().isNoContent());
 
         verify(alertaService).cancelar(usuarioAutenticado, 1);
@@ -130,7 +136,7 @@ class AlertaControllerTest {
         doThrow(new IllegalStateException("No puedes cancelar una alerta de otro usuario"))
                 .when(alertaService).cancelar(usuarioAutenticado, 99);
 
-        mockMvc.perform(patch("/inversionista/alertas/99/cancelar").with(user(usuarioAutenticado)))
+        mockMvc.perform(patch("/inversionista/alertas/99/cancelar").with(AutenticadoComo.usuario(usuarioAutenticado)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.mensaje").value("No puedes cancelar una alerta de otro usuario"));
     }

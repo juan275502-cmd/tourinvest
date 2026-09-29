@@ -43,7 +43,9 @@ public class ReporteService {
     }
 
     public List<ReporteResumenDTO> listarTodos() {
-        return reporteRepository.findAll().stream()
+        // Usa la consulta con fetch join: el DTO necesita empresa y usuario, y con
+        // open-in-view=false los proxies LAZY no pueden inicializarse al mapear.
+        return reporteRepository.findAllConEmpresaYUsuario().stream()
                 .map(this::mapearADTO)
                 .toList();
     }

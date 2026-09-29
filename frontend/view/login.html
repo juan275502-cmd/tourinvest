@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TourInvest | Iniciar Sesión</title>
+  <link rel="icon" type="image/png" href="../assets/imgs/tourinvest.png">
+  <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+  <div class="auth-wrapper">
+    <div class="auth-card">
+      <div class="auth-logo">
+        <div><img class="logo-circle" src="../assets/imgs/tourinvest.png" alt="TourInvest"></div>
+        <h1>TourInvest</h1>
+        <p>Análisis e inversión financiera</p>
+      </div>
+
+      <div id="mensaje-global" class="mensaje-global"></div>
+
+      <!-- Autenticar usuario (contrato Java Spring Boot :8080, ver js/auth.js) -->
+      <form id="loginForm" onsubmit="return iniciarSesion(event)">
+        <div class="field">
+          <label for="correo">Correo electrónico</label>
+          <input type="email" id="correo" name="correo" placeholder="usuario@correo.com" required>
+        </div>
+        <div class="field">
+          <label for="contrasena">Contraseña</label>
+          <input type="password" id="contrasena" name="contrasena" placeholder="••••••••" required>
+        </div>
+        <button type="submit" class="btn-primary">Iniciar Sesión</button>
+      </form>
+
+      <div class="auth-links">
+        <a href="recuperar.html">¿Olvidaste tu contraseña?</a>
+        <br><br>
+        ¿No tienes cuenta? <a href="registro.html">Regístrate aquí</a>
+      </div>
+    </div>
+  </div>
+  <script src="../js/auth.js" defer></script>
+</body>
+</html>

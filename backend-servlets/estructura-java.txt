@@ -1,4 +1,4 @@
-backend-java/
+backend-servlets/
 ├── pom.xml
 ├── estructura-java.txt 
 └── src/main/

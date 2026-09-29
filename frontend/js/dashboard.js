@@ -1,4 +1,15 @@
-const API_BASE_URL = "http://localhost:8080";
+// URL canonica de la API: www.tourinvest.com (mapeado a 127.0.0.1 en el
+// archivo de hosts del sistema). Ver STARTUP.md -> "Convencion de hostname".
+const API_BASE_URL = "http://www.tourinvest.com:8080";
+
+// Alias corto al modulo de graficas SVG (js/graficas.js).
+const Graficas = window.TourInvestUI.Graficas;
+
+// Estado de las graficas del dashboard del Inversionista.
+let datosPortafolioCache = null;   // respuesta de /inversionista/resumen
+let datosAlertasCache = null;      // respuesta de /inversionista/alertas
+let tipoActivoPortafolio = null;   // getter que devuelve el tipo elegido
+let tipoActivoAlertas = null;      // getter del tipo elegido en alertas
 
 let empresasCache = [];
 
@@ -104,6 +115,73 @@ async function cargarResumenPortafolio() {
         </tr>`;
     })
     .join("");
+
+  // Gráfica: el usuario puede cambiar entre Anillo, Barras y Línea.
+  // Se conservan los datos para redibujar sin volver a llamar a la API.
+  datosPortafolioCache = datos;
+
+  if (!tipoActivoPortafolio) {
+    // El selector se crea una sola vez; devuelve el getter del tipo elegido.
+    tipoActivoPortafolio = Graficas.crearSelector("selector-grafica-portafolio", [
+      { id: "anillo", etiqueta: "Anillo" },
+      { id: "barras", etiqueta: "Barras" },
+      { id: "linea", etiqueta: "Línea" },
+    ], "tourinvest_grafica_portafolio");
+    // Al pulsar un boton, se redibuja la grafica ya cargada.
+    document.addEventListener("grafica:tipo", (evento) => {
+      if (evento.detail.clave === "tourinvest_grafica_portafolio") pintarGraficaPortafolio();
+    });
+  }
+  pintarGraficaPortafolio();
+}
+
+/** Dibuja el portafolio con el tipo de gráfica que el usuario eligio. */
+function pintarGraficaPortafolio() {
+  if (!datosPortafolioCache) return;
+  const tipo = tipoActivoPortafolio ? tipoActivoPortafolio() : "anillo";
+  const contenedor = document.getElementById("grafica-portafolio");
+  if (!contenedor) return;
+
+  // La clase controla el tamano maximo (evita que el anillo se estirase).
+  contenedor.className = `grafica grafica--${tipo === "linea" ? "linea" : tipo}`;
+
+  const posiciones = datosPortafolioCache.posiciones || [];
+
+  if (tipo === "barras") {
+    Graficas.barras("grafica-portafolio",
+      posiciones.map((p) => ({
+        etiqueta: p.simbolo || p.nombreEmpresa,
+        valor: Number(p.valorActual) || 0,
+        valorTexto: formatearMoneda(Number(p.valorActual) || 0),
+      })),
+      { titulo: "Valor actual por empresa", vacio: "Aun no tienes inversiones en el portafolio." });
+  } else if (tipo === "linea") {
+    // Línea: rendimiento acumulado para ver la evolucion de cada posicion.
+    Graficas.linea("grafica-portafolio",
+      posiciones.map((p) => ({
+        etiqueta: p.simbolo || p.nombreEmpresa,
+        valor: Number(p.rendimientoPorcentual) || 0,
+        valorTexto: formatearPorcentaje(Number(p.rendimientoPorcentual) || 0),
+      })),
+      {
+        titulo: "Rendimiento por posicion (%)",
+        vacio: "Aun no tienes inversiones en el portafolio.",
+        formatoEje: (v) => `${v.toFixed(0)}%`,
+      });
+  } else {
+    Graficas.doughnut("grafica-portafolio",
+      posiciones.map((p) => ({
+        etiqueta: p.simbolo || p.nombreEmpresa,
+        valor: Number(p.valorActual) || 0,
+        valorTexto: formatearMoneda(Number(p.valorActual) || 0),
+      })),
+      {
+        titulo: "Reparto de tu portafolio por empresa",
+        textoCentral: formatearMoneda(datosPortafolioCache.valorTotal),
+        pieCentral: "Valor total",
+        vacio: "Aun no tienes inversiones en el portafolio.",
+      });
+  }
 }
 
 // ---------- Vista: Empresas ----------
@@ -245,6 +323,63 @@ async function cargarAlertas() {
         </tr>`
     )
     .join("");
+
+  // Gráfica: el usuario puede alternar entre Barras y Línea.
+  datosAlertasCache = alertas;
+
+  if (!tipoActivoAlertas) {
+    tipoActivoAlertas = Graficas.crearSelector("selector-grafica-alertas", [
+      { id: "barras", etiqueta: "Barras" },
+      { id: "linea", etiqueta: "Línea" },
+    ], "tourinvest_grafica_alertas");
+    document.addEventListener("grafica:tipo", (evento) => {
+      if (evento.detail.clave === "tourinvest_grafica_alertas") pintarGraficaAlertas();
+    });
+  }
+  pintarGraficaAlertas();
+}
+
+/** Dibuja las alertas con el tipo elegido (barras o línea). */
+function pintarGraficaAlertas() {
+  if (!datosAlertasCache) return;
+  const tipo = tipoActivoAlertas ? tipoActivoAlertas() : "barras";
+  const contenedor = document.getElementById("grafica-alertas");
+  if (!contenedor) return;
+  contenedor.className = `grafica grafica--${tipo}`;
+
+  const alertas = datosAlertasCache;
+
+  if (tipo === "linea") {
+    // Línea: precio actual frente al objetivo, en orden de entrada.
+    Graficas.linea("grafica-alertas",
+      alertas.map((a) => ({
+        etiqueta: a.simbolo,
+        valor: Number(a.precioActual) || 0,
+        valorTexto: formatearMoneda(Number(a.precioActual) || 0),
+      })),
+      {
+        titulo: "Precio actual de las acciones vigiladas",
+        vacio: "No tienes alertas registradas.",
+        formatoEje: (v) => formatearMoneda(v),
+      });
+  } else {
+    // Barras: diferencia entre el precio objetivo y el actual. Se colorea
+    // segun el signo: verde si el objetivo esta por debajo (oportunidad de
+    // compra) y rojo si esta por encima (conviene esperar).
+    Graficas.barras("grafica-alertas",
+      alertas.map((a) => ({
+        etiqueta: a.simbolo,
+        valor: Number(a.precioObjetivo) - Number(a.precioActual),
+        valorTexto: formatearMoneda(Number(a.precioObjetivo) || 0),
+      })),
+      {
+        titulo: "Diferencia entre el precio objetivo y el actual",
+        colorearPorSigno: true,
+        vacio: "No tienes alertas registradas.",
+        leyenda: "<span class='negativo'>Objetivo por debajo (oportunidad de compra)</span>"
+          + "<span class='positivo'>Objetivo por encima</span>",
+      });
+  }
 }
 
 async function cancelarAlerta(idAlerta) {
@@ -254,9 +389,12 @@ async function cancelarAlerta(idAlerta) {
 
 // ---------- Perfil / cierre de sesión ----------
 
+// El perfil ahora se pide a la API (GET /perfil) en vez de solo leer sessionStorage:
+// asi los datos editados se reflejan siempre, y cada rol ve SU propio perfil.
 function cargarPerfil() {
-  document.getElementById("perfil-nombre").textContent = sessionStorage.getItem("tourinvest_nombre") || "—";
-  document.getElementById("perfil-rol").textContent = sessionStorage.getItem("tourinvest_rol") || "—";
+  if (window.TourInvestUI && window.TourInvestUI.Perfil) {
+    window.TourInvestUI.Perfil.cargar();
+  }
 }
 
 function cerrarSesion() {

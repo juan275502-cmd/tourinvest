@@ -113,7 +113,7 @@ class ReporteServiceTest {
         reporte.setTitulo("Reporte Apple");
         reporte.setDescripcion("Tendencia alcista.");
 
-        when(reporteRepository.findAll()).thenReturn(List.of(reporte));
+        when(reporteRepository.findAllConEmpresaYUsuario()).thenReturn(List.of(reporte));
 
         List<ReporteResumenDTO> resultado = reporteService.listarTodos();
 

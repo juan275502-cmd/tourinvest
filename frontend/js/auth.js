@@ -1,14 +1,33 @@
-const API_BASE_URL = "http://localhost:8080";
+// -----------------------------------------------------------------------------
+// URL canonica de la API.
+//
+// El proyecto usa EXCLUSIVAMENTE `www.tourinvest.com` como nombre publico y
+// `127.0.0.1` como direccion real. El dominio debe estar mapeado a 127.0.0.1
+// en el archivo de hosts del sistema (ver STARTUP.md y `setup.sh check`).
+//
+// Si prefieres trabajar sobre la IP cruda, cambia esta constante por
+// "http://127.0.0.1:8080" (y agrega ese origen a CORS_ALLOWED_ORIGINS).
+// -----------------------------------------------------------------------------
+const API_BASE_URL = "http://www.tourinvest.com:8080";
 
 // El dashboard de destino según el rol que devuelve el backend en el login.
-// Estos archivos se crean en un paso posterior (evidencia AA3-EV02 / mockups navegables).
 const RUTA_DASHBOARD = {
   Administrador: "administrador.html",
   Analista: "analista.html",
   Inversionista: "inversionista.html",
 };
 
+// Fallback correcto: antes apuntaba a "dashboard-inversionista.html", un archivo
+// que no existe, asi que un rol desconocido llevaba a un 404 en blanco.
+const DASHBOARD_POR_DEFECTO = "inversionista.html";
+
 function mostrarMensajeGlobal(elemento, texto, tipo) {
+  // Si el elemento no existe (pagina sin el contenedor), la UI se romperia y
+  // el boton del formulario podria quedar bloqueado en "Verificando...".
+  if (!elemento) {
+    console.warn("[TourInvest] Falta el contenedor de mensajes:", texto);
+    return;
+  }
   elemento.textContent = texto;
   elemento.className = `mensaje-global mensaje-global--visible mensaje-global--${tipo}`;
 }
@@ -67,15 +86,18 @@ async function iniciarSesion(evento) {
     sessionStorage.setItem("tourinvest_correo", cuerpo.correo);
     sessionStorage.setItem("tourinvest_rol", cuerpo.rol);
 
-    const destino = RUTA_DASHBOARD[cuerpo.rol] || "dashboard-inversionista.html";
+    const destino = RUTA_DASHBOARD[cuerpo.rol] || DASHBOARD_POR_DEFECTO;
     window.location.href = destino;
   } catch (error) {
     mostrarMensajeGlobal(
       mensajeGlobal,
-      "No fue posible conectar con el servidor. Verifica que el backend esté corriendo en localhost:8080.",
+      "No fue posible conectar con el servidor. Verifica que el backend esté corriendo en www.tourinvest.com:8080.",
       "error"
     );
   } finally {
+    // El boton SIEMPRE vuelve a su estado original. Sin este bloque el
+    // formulario se quedaba en "Verificando..." para siempre cuando la
+    // peticion fallaba, dejando al usuario sin poder reintentar.
     boton.disabled = false;
     boton.textContent = "Iniciar sesión";
   }
@@ -113,7 +135,7 @@ async function solicitarRecuperacion(evento) {
   } catch (error) {
     mostrarMensajeGlobal(
       mensajeGlobal,
-      "No fue posible conectar con el servidor. Verifica que el backend esté corriendo en localhost:8080.",
+      "No fue posible conectar con el servidor. Verifica que el backend esté corriendo en www.tourinvest.com:8080.",
       "error"
     );
   } finally {
@@ -190,7 +212,7 @@ async function registrarUsuario(evento) {
   } catch (error) {
     mostrarMensajeGlobal(
       mensajeGlobal,
-      "No fue posible conectar con el servidor. Verifica que el backend esté corriendo en localhost:8080.",
+      "No fue posible conectar con el servidor. Verifica que el backend esté corriendo en www.tourinvest.com:8080.",
       "error"
     );
   } finally {

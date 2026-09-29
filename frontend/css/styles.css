@@ -11,6 +11,10 @@
   --gris-claro: #F2F4F7;
   --gris-texto: #6fa6d9;
   --rojo-error: #C0392B;
+  /* Texto secundario: para pies, etiquetas de ejes y graficas.
+     Antes se usaba --gris-texto (azul claro) o directamente #6fa6d9, que
+     quedaba con poco contraste sobre fondo blanco. */
+  --texto-secundario: #5A6B7B;
   --radius: 10px;
   --font-base: "Segoe UI", Arial, sans-serif;
 
@@ -113,6 +117,11 @@ input[type="text"],
 input[type="email"],
 input[type="password"],
 input[type="date"],
+/* `number` faltaba en esta lista: por eso los campos de Cantidad (portafolio)
+   y Activo/Pasivo corriente (liquidez) se veian estrechos y amontonados,
+   montados encima del boton. Los spinners tambien se ocultan porque se
+   veian raro junto al resto de campos. */
+input[type="number"],
 select {
   width: 100%;
   padding: 11px 12px;
@@ -121,6 +130,20 @@ select {
   font-size: 15px;
   outline: none;
   transition: border-color 0.15s;
+  /* Evita que el campo crezca al escribir cifras largas. */
+  min-width: 0;
+}
+
+/* Los controles numericos no necesitan los triangulos del navegador:
+   se ocultan sin perder la rueda del raton para subir/bajar el valor. */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
 }
 
 input:focus,
@@ -828,6 +851,164 @@ th {
     .home-hero h1 {
     font-size: 34px;
   }
+}
+
+/* ---------- Formularios de los dashboards ----------
+   Los formularios de las vistas (liquidez, agregar al portafolio, crear
+   reporte) usaban label/input sueltos, sin contenedor. Sin esto los campos
+   se apilan sin separacion y el boton queda pegado al ultimo input. */
+.dashboard-form {
+  max-width: 460px;
+}
+.dashboard-form label {
+  margin-top: 12px;
+}
+.dashboard-form label:first-of-type {
+  margin-top: 0;
+}
+.dashboard-form button[type="submit"],
+.dashboard-form button[type="button"] {
+  margin-top: 16px;
+}
+
+/* Dos campos en paralelo cuando hay ancho suficiente (activo/pasivo corriente).
+   En pantallas estrechas se apilan solos gracias al grid. */
+.dashboard-form__fila {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 16px;
+}
+@media (max-width: 640px) {
+  .dashboard-form__fila {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---------- Graficas (SVG generadas por JS, sin librerias) ---------- */
+.grafica {
+  margin-top: 18px;
+}
+.grafica__titulo {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--azul-oscuro);
+  margin: 0 0 12px;
+}
+/* El SVG trae `width`/`height` propios (ver `svg()` en graficas.js), asi que
+   `width: 100%` ya no lo estira: solo lo deja adaptable a pantallas estrechas. */
+.grafica svg {
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  display: block;
+  overflow: visible;
+}
+/* El anillo tiene viewBox de 160 px; se acota a 160 para que no crezca en
+   pantallas anchas y se centra. */
+.grafica--anillo svg { max-width: 160px; margin: 0 auto; }
+/* Las barras horizontales usan un viewBox ancho (640) y sí aprovechan el panel. */
+.grafica--barras svg { max-width: 640px; }
+/* La línea se limita para que no quede estirada en pantallas anchas. */
+.grafica--linea svg { max-width: 640px; }
+
+/* Selector de tipo de gráfica (botones) */
+.grafica-selector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.grafica-selector__boton {
+  font: inherit;
+  font-size: 13px;
+  padding: 6px 12px;
+  border: 1px solid #cfd6dd;
+  border-radius: 999px;
+  background: var(--blanco);
+  color: var(--texto-secundario);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.grafica-selector__boton:hover {
+  border-color: var(--azul-oscuro);
+  color: var(--azul-oscuro);
+}
+.grafica-selector__boton[aria-pressed="true"] {
+  background: var(--azul-oscuro);
+  border-color: var(--azul-oscuro);
+  color: var(--blanco);
+  font-weight: 600;
+}
+.grafica-selector__boton:focus-visible {
+  outline: 2px solid var(--verde);
+  outline-offset: 2px;
+}
+.grafica__barra {
+  fill: var(--azul-oscuro);
+}
+.grafica__barra--negativa {
+  fill: var(--rojo-error);
+}
+.grafica__barra--positiva {
+  fill: var(--verde);
+}
+.grafica__etiqueta {
+  font-size: 11px;
+  fill: var(--texto-secundario);
+}
+.grafica__valor {
+  font-size: 11px;
+  font-weight: 600;
+  fill: var(--azul-oscuro);
+}
+.grafica__eje {
+  stroke: #cfd6dd;
+  stroke-width: 1;
+}
+/* Línea y su relleno (gráfica de tipo "linea") */
+.grafica__linea {
+  fill: none;
+  stroke: var(--azul-oscuro);
+  stroke-width: 2.5;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+.grafica__area {
+  fill: var(--azul-oscuro);
+  opacity: 0.1;
+  stroke: none;
+}
+.grafica__punto {
+  fill: var(--blanco);
+  stroke: var(--azul-oscuro);
+  stroke-width: 2;
+}
+.grafica__leyenda {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--texto-secundario);
+}
+.grafica__leyenda span::before {
+  content: "";
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+.grafica__leyenda .positivo::before { background: var(--verde); }
+.grafica__leyenda .negativo::before { background: var(--rojo-error); }
+.grafica-vacia {
+  color: var(--texto-secundario);
+  font-size: 13px;
+  padding: 18px;
+  text-align: center;
+  border: 1px dashed #cfd6dd;
+  border-radius: 8px;
 }
 
 /* ---------- Mensajes globales y errores de campo (auth.js + dashboards) ----------

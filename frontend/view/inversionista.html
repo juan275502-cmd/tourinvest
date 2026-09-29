@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TourInvest | Dashboard Inversionista</title>
+  <link rel="icon" type="image/png" href="../assets/imgs/tourinvest.jpeg">
+  <link rel="stylesheet" href="../css/styles.css?v=2">
+  <script src="../js/app.js" defer></script>
+  <script src="../js/perfil.js" defer></script>
+  <script src="../js/graficas.js?v=2" defer></script>
+  <script src="../js/dashboard.js" defer></script>
+</head>
+<body>
+  <div class="app-layout">
+
+    <aside class="sidebar">
+      <div class="brand">
+        <div aria-hidden="true"><img class="logo-circle" src="../assets/imgs/tourinvest.png" alt="TourInvest"></div>
+        <span>TourInvest</span>
+      </div>
+      <nav aria-label="Navegación de inversionista">
+        <a href="#portafolio" class="sidebar__link sidebar__link--activo" data-vista="portafolio">Portafolio</a>
+        <a href="#alertas" class="sidebar__link" data-vista="alertas">Alertas</a>
+        <a href="#noticias" class="sidebar__link" data-vista="noticias">Noticias</a>
+        <a href="#empresas" class="sidebar__link" data-vista="empresas">Empresas</a>
+        <a href="#perfil" class="sidebar__link" data-vista="perfil">Perfil</a>
+      </nav>
+      <div class="logout"><a href="../index.html">Cerrar sesión</a></div>
+    </aside>
+
+    <main class="main-content">
+      <header class="top-header" aria-label="Encabezado de la plataforma">
+        <div class="top-header__inner">
+          <button class="top-header__brand top-header__brand--home" type="button" onclick="location.href='../index.html'">
+            <img class="top-header__logo" src="../assets/imgs/tourinvest.png" alt="TourInvest logo">
+            <div class="top-header__titles">
+              <h1>TourInvest</h1>
+              <p>Sistema de Inversión Turística</p>
+            </div>
+          </button>
+          <div class="top-header__right">
+            <div class="user-chip">
+              <span class="user-name" id="nombre-usuario-topbar">—</span>
+              <span class="role-badge role-badge--inversionista" id="rol-usuario-topbar">Inversionista</span>
+            </div>
+            <a class="top-header__logout" href="javascript:cerrarSesion()">Cerrar Sesión</a>
+          </div>
+        </div>
+      </header>
+
+      <div class="ti-content-container" id="inversionista-root">
+
+        <!-- VISTA: PORTAFOLIO (activa por defecto) -->
+        <section class="vista vista--activa" data-vista-panel="portafolio">
+          <div class="cards-grid">
+            <div class="card">
+              <h3>Valor del portafolio</h3>
+              <div class="value" id="valor-portafolio">—</div>
+              <div class="delta positive">▲ mes</div>
+            </div>
+            <div class="card">
+              <h3>Total invertido</h3>
+              <div class="value" id="total-invertido">—</div>
+              <div class="delta positive">capital</div>
+            </div>
+            <div class="card">
+              <h3>Rendimiento</h3>
+              <div class="value" id="rendimiento-portafolio">—</div>
+              <div class="delta positive">rendimiento total</div>
+            </div>
+            <div class="card">
+              <h3>Alertas activas</h3>
+              <div class="value" id="total-alertas-activas">—</div>
+              <div class="delta negative">requieren atención</div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <h3>Hola, <span id="nombre-usuario">—</span> — composición del portafolio</h3>
+            <table class="tabla">
+              <thead>
+                <tr><th>Acción</th><th>Cantidad</th><th>Precio compra</th><th>Precio actual</th><th>Rendimiento</th></tr>
+              </thead>
+              <tbody id="tabla-portafolio-cuerpo">
+                <tr><td colspan="5" class="estado-vacio">Cargando...</td></tr>
+              </tbody>
+            </table>
+            <!-- Selector de tipo de gráfica: Anillo / Barras / Línea -->
+            <div id="selector-grafica-portafolio" style="margin-top: 18px;"></div>
+            <div class="grafica grafica--anillo" id="grafica-portafolio"></div>
+          </div>
+        </section>
+
+        <!-- VISTA: Alertas -->
+        <section class="vista" data-vista-panel="alertas">
+          <div class="panel">
+            <h3>Alertas de precio</h3>
+            <table class="tabla">
+              <thead>
+                <tr><th>Símbolo</th><th>Precio objetivo</th><th>Precio actual</th><th>Estado</th><th></th></tr>
+              </thead>
+              <tbody id="tabla-alertas-cuerpo">
+                <tr><td colspan="5" class="estado-vacio">Cargando...</td></tr>
+              </tbody>
+            </table>
+            <!-- Selector de tipo de gráfica para las alertas -->
+            <div id="selector-grafica-alertas" style="margin-top: 18px;"></div>
+            <div class="grafica grafica--barras" id="grafica-alertas"></div>
+          </div>
+        </section>
+
+        <!-- VISTA: Empresas -->
+        <section class="vista" data-vista-panel="empresas">
+          <div class="panel">
+            <h3>Empresas recomendadas</h3>
+            <table class="tabla">
+              <thead>
+                <tr><th>Acción</th><th>Sector</th><th>Precio</th><th>Variación</th><th></th></tr>
+              </thead>
+              <tbody id="tabla-empresas-cuerpo">
+                <tr><td colspan="5" class="estado-vacio">Cargando...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- VISTA: Noticias (mockup 6.3 - RF09) -->
+        <section class="vista" data-vista-panel="noticias">
+          <div class="cards-grid">
+            <div class="card">
+              <h3>Turismo</h3>
+              <p>El turismo receptivo proyecta un crecimiento del 6% para el próximo trimestre, impulsado por la temporada alta.</p>
+              <div class="delta positive">▲ Tendencia positiva</div>
+            </div>
+            <div class="card">
+              <h3>Aerolíneas</h3>
+              <p>Las reservas internacionales suben 12% interanual; nuevas rutas conectan al Caribe.</p>
+              <div class="delta positive">▲ Oportunidad</div>
+            </div>
+            <div class="card">
+              <h3>Hoteles</h3>
+              <p>Global Hoteles reporta ocupación récord; analistas revisan su precio objetivo.</p>
+              <div class="delta negative">▼ Volatilidad</div>
+            </div>
+          </div>
+          <div class="panel">
+            <h3>Titulares destacados</h3>
+            <table class="tabla">
+              <thead><tr><th>Fecha</th><th>Titular</th><th>Fuente</th></tr></thead>
+              <tbody>
+                <tr><td>2026-08-25</td><td>Turismo receptivo crece y arrastra al sector hotelero</td><td>Portafolio</td></tr>
+                <tr><td>2026-08-24</td><td>Nuevas rutas aéreas impulsan la demanda de paquetes turísticos</td><td>El Tiempo</td></tr>
+                <tr><td>2026-08-22</td><td>Global Hoteles anuncia expansión en la costa Caribe</td><td>La República</td></tr>
+                <tr><td>2026-08-20</td><td>InverTech suma alianzas para pagos digitales en destinos</td><td>Forbes</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- VISTA: Perfil -->
+        <section class="vista" data-vista-panel="perfil">
+          <div class="panel">
+            <h3>Mi perfil</h3>
+            <p class="muted">Estos son tus datos. Puedes editarlos cuando quieras; el rol y el estado los asigna el Administrador.</p>
+            <p><strong>Nombre:</strong> <span id="perfil-nombre">—</span></p>
+            <p><strong>Rol:</strong> <span id="perfil-rol">—</span></p>
+            <p><strong>Correo:</strong> <span id="perfil-correo">—</span></p>
+            <p><strong>Cédula:</strong> <span id="perfil-cedula">—</span></p>
+            <p><strong>Fecha de nacimiento:</strong> <span id="perfil-nacimiento">—</span></p>
+            <p><strong>Registrado el:</strong> <span id="perfil-registro">—</span></p>
+            <button class="btn-primary" type="button" style="width: auto; padding: 10px 16px; margin-top: 10px;" onclick="TourInvestUI.Perfil.abrirModal()">Editar mi perfil</button>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- Modal de detalle de empresa (lo usa dashboard.js) -->
+  <div class="modal" id="modal-empresa" aria-hidden="true" role="dialog">
+    <div class="modal__backdrop" data-close-modal></div>
+    <div class="modal__card">
+      <div class="modal__header">
+        <h3 id="modal-empresa-nombre">Empresa</h3>
+        <button class="modal__close" type="button" onclick="cerrarModalEmpresa()" aria-label="Cerrar">✕</button>
+      </div>
+      <div class="modal__body">
+        <p class="muted" id="modal-empresa-meta">—</p>
+        <p class="muted"><strong>Precio:</strong> <span id="modal-empresa-precio">—</span></p>
+        <p class="muted"><strong>Variación:</strong> <span id="modal-empresa-variacion">—</span></p>
+
+        <div class="subformulario" id="subf-agregar">
+          <h4>Agregar al portafolio</h4>
+          <form id="form-agregar-portafolio" class="dashboard-form" onsubmit="return agregarAlPortafolio(event)">
+            <label for="cantidad-agregar">Cantidad de acciones</label>
+            <input type="number" id="cantidad-agregar" name="cantidad" min="1" step="1" placeholder="10" required>
+            <button type="submit" class="btn-primary">Agregar al portafolio</button>
+          </form>
+        </div>
+
+        <div class="subformulario" id="subf-alerta">
+          <h4>Crear alerta de precio</h4>
+          <form id="form-crear-alerta" onsubmit="return crearAlerta(event)">
+            <label for="precio-objetivo">Precio objetivo</label>
+            <input type="number" step="0.01" id="precio-objetivo" name="precioObjetivo" min="0.01" required>
+            <button type="submit" class="btn-primary">Crear alerta</button>
+          </form>
+        </div>
+
+        <button class="btn btn-link" type="button" onclick="mostrarSubformulario('subf-agregar')">Agregar al portafolio</button>
+        <button class="btn btn-link" type="button" onclick="mostrarSubformulario('subf-alerta')">Crear alerta</button>
+      </div>
+    </div>
+  </div>
+<!-- Modal Editar mi perfil (compartido por los 3 roles) -->
+<div class="modal" id="modal-perfil" aria-hidden="true" role="dialog">
+  <div class="modal__backdrop" data-close-modal onclick="TourInvestUI.Perfil.cerrarModal()"></div>
+  <div class="modal__card">
+    <div class="modal__header">
+      <h3>Editar mi perfil</h3>
+      <button class="modal__close" type="button" onclick="TourInvestUI.Perfil.cerrarModal()" aria-label="Cerrar">✕</button>
+    </div>
+    <div class="modal__body">
+      <div id="mensaje-perfil" class="mensaje-global"></div>
+      <p class="muted" style="font-size: 12px;">Solo puedes editar tu propio perfil. El rol y el estado los asigna el Administrador.</p>
+      <form id="form-perfil" onsubmit="return TourInvestUI.Perfil.guardar(event)">
+        <div class="field">
+          <label for="perfil-form-nombre">Nombre</label>
+          <input type="text" id="perfil-form-nombre" name="nombre1" maxlength="30" required>
+        </div>
+        <div class="field">
+          <label for="perfil-form-apellido">Apellido</label>
+          <input type="text" id="perfil-form-apellido" name="apellido1" maxlength="100" required>
+        </div>
+        <div class="field">
+          <label for="perfil-form-cedula">Cédula</label>
+          <input type="text" id="perfil-form-cedula" name="cedula" maxlength="20" required>
+        </div>
+        <div class="field">
+          <label for="perfil-form-nacimiento">Fecha de nacimiento</label>
+          <input type="date" id="perfil-form-nacimiento" name="fechaNacimiento" required>
+        </div>
+        <div class="field">
+          <label for="perfil-form-correo">Correo (es tu usuario de acceso)</label>
+          <input type="email" id="perfil-form-correo" name="correo" maxlength="120" required>
+        </div>
+        <button type="submit" class="btn-primary">Guardar cambios</button>
+      </form>
+
+      <hr style="margin: 20px 0; border: none; border-top: 1px solid var(--borde, #d8dee9);">
+
+      <h4 style="margin: 0 0 8px;">Cambiar contraseña</h4>
+      <form id="form-perfil-clave" onsubmit="return TourInvestUI.Perfil.cambiarContrasena(event)">
+        <div class="field">
+          <label for="perfil-clave-actual">Contraseña actual</label>
+          <input type="password" id="perfil-clave-actual" name="contrasenaActual" required>
+        </div>
+        <div class="field">
+          <label for="perfil-clave-nueva">Nueva contraseña (mínimo 6)</label>
+          <input type="password" id="perfil-clave-nueva" name="contrasenaNueva" minlength="6" required>
+        </div>
+        <button type="submit" class="btn-primary">Cambiar contraseña</button>
+      </form>
+    </div>
+  </div>
+</div>
+</body>
+</html>

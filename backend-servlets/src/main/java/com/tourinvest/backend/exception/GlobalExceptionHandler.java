@@ -2,6 +2,7 @@ package com.tourinvest.backend.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -48,6 +49,26 @@ public class GlobalExceptionHandler {
         body.put("errores", errores);
 
         return ResponseEntity.badRequest().body(body);
+    }
+
+    // 403 - autenticado pero sin permisos para el recurso (p. ej. un Analista
+    // intentando POST /empresas, que exige ROLE_ADMINISTRADOR).
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<Map<String, Object>> handleAccessDenied(AccessDeniedException ex) {
+        return construirRespuesta(HttpStatus.FORBIDDEN,
+                "No tienes permisos para acceder a este recurso con tu rol.");
+    }
+
+    // 401 - sin token, con token invalido o con token caducado.
+    // Spring Security lanza esto antes de entrar al controller, asi que se
+    // configura en el entry point de la cadena (ver SecurityConfig) para que la
+    // respuesta sea JSON y no la pagina de error por defecto.
+    public static Map<String, Object> cuerpoNoAutenticado(int status, String mensaje) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("timestamp", LocalDateTime.now());
+        body.put("status", status);
+        body.put("mensaje", mensaje);
+        return body;
     }
 
     private ResponseEntity<Map<String, Object>> construirRespuesta(HttpStatus status, String mensaje) {

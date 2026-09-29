@@ -146,7 +146,9 @@ main>section:first-child {
 
     position: absolute;
     inset: 0;
-    background-image: url(frontend/assets/photo-1568489711036-9c94a7d5aea6.avif);
+    /* La imagen vive en frontend/assets/imgs/; desde este CSS (frontend/css/)
+       se alcanza con ../assets/imgs/ */
+    background-image: url(../assets/imgs/photo-1568489711036-9c94a7d5aea6.avif);
     background-size: cover;
     background-position: center 30%;
     filter: saturate(1.05);

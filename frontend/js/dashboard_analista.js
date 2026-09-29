@@ -1,4 +1,9 @@
-const API_BASE_URL = "http://localhost:8080";
+// URL canonica de la API: www.tourinvest.com (mapeado a 127.0.0.1 en el
+// archivo de hosts del sistema). Ver STARTUP.md -> "Convencion de hostname".
+const API_BASE_URL = "http://www.tourinvest.com:8080";
+
+// Alias corto al modulo de graficas SVG (js/graficas.js).
+const Graficas = window.TourInvestUI.Graficas;
 
 let empresasCache = [];
 
@@ -100,6 +105,20 @@ async function cargarEmpresas() {
   selectorEmpresa.innerHTML = empresasCache
     .map((empresa) => `<option value="${empresa.idEmpresa}">${empresa.simbolo} · ${empresa.nombre}</option>`)
     .join("");
+
+  // Gráfica: variación porcentual de cada empresa (verde/rojo según signo).
+  Graficas.barras("grafica-variacion-empresas",
+    empresasCache.map((empresa) => ({
+      etiqueta: empresa.simbolo || empresa.nombre,
+      valor: Number(empresa.variacion) || 0,
+      valorTexto: formatearPorcentaje(Number(empresa.variacion) || 0),
+    })),
+    {
+      titulo: "Variación de las empresas analizadas",
+      colorearPorSigno: true,
+      vacio: "No hay empresas para graficar.",
+      leyenda: "<span class='positivo'>Sube</span><span class='negativo'>Baja</span>",
+    });
 }
 
 // ---------- Vista: Indicadores ----------
@@ -131,6 +150,11 @@ async function calcularLiquidez(evento) {
   const datos = await respuesta.json();
   resultadoEl.textContent = `Liquidez corriente: ${Number(datos.liquidezCorriente).toFixed(2)}`;
   resultadoEl.className = "mensaje-global mensaje-global--visible mensaje-global--exito";
+
+  // Gráfica: reparto del activo frente al pasivo corriente.
+  Graficas.barraApilada("grafica-liquidez", activoCorriente, pasivoCorriente, {
+    titulo: "Composición del capital corriente",
+  });
 }
 
 // ---------- Vista: Reportes ----------
@@ -198,9 +222,12 @@ async function crearReporte(evento) {
 
 // ---------- Perfil / cierre de sesión ----------
 
+// El perfil ahora se pide a la API (GET /perfil) en vez de solo leer sessionStorage:
+// asi los datos editados se reflejan siempre, y cada rol ve SU propio perfil.
 function cargarPerfil() {
-  document.getElementById("perfil-nombre").textContent = sessionStorage.getItem("tourinvest_nombre") || "—";
-  document.getElementById("perfil-rol").textContent = sessionStorage.getItem("tourinvest_rol") || "—";
+  if (window.TourInvestUI && window.TourInvestUI.Perfil) {
+    window.TourInvestUI.Perfil.cargar();
+  }
 }
 
 function cerrarSesion() {

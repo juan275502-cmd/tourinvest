@@ -128,10 +128,19 @@ INSERT INTO roles (nombre) VALUES
 INSERT INTO
     usuarios (id_rol, nombre1, apellido1, cedula, fecha_nacimiento, correo, contrasena)
 VALUES
-    -- Contraseña real para los 3: "123456" (hasheada con BCrypt para uso con Spring Security)
-    (1, 'Juan', 'Fuentes', '1001234567', '2002-11-27', 'juan@tourinvest.com', '$2b$04$.7kmqSNHuBW3XmOoP.Ml.OWEf/nsNFw.mGeMP6BIlywXdqIlBc/NS'),
-    (2, 'Laura', 'Gomez', '1001234568', '1999-05-15', 'laura@tourinvest.com', '$2b$04$.7kmqSNHuBW3XmOoP.Ml.OWEf/nsNFw.mGeMP6BIlywXdqIlBc/NS'),
-    (3, 'Carlos', 'Rodriguez', '1001234569', '1998-08-10', 'carlos@tourinvest.com', '$2b$04$.7kmqSNHuBW3XmOoP.Ml.OWEf/nsNFw.mGeMP6BIlywXdqIlBc/NS');
+    -- Contrasena real para los 3: "123456".
+    -- Hashes BCrypt con coste 10 (el mismo que usa PasswordEncoderConfig).
+    -- Cada usuario tiene SU propio hash: sharing un unico hash entre cuentas
+    -- permitiria comparar usuarios entre si ("si dos usuarios estan
+    -- autenticandose, equals(hash) revela que es la misma contrasena").
+    --   kike@    = Administrador (id_rol 1)
+    --   marlen@  = Analista      (id_rol 2)
+    --   juan@    = Inversionista (id_rol 3)
+    -- Para cambiar la clave de un usuario, generarla con:
+    --   BCryptPasswordEncoder(10).encode("nuevaClave")
+    (1, 'Kike', 'Aguirre', '80760000', '1983-08-10', 'kike@tourinvest.com', '$2b$10$fbjJzIAH80WHpx0PnGhpfewc.lKDhBjQaj5GJq8Pdk9N9ny8nOxx2'),
+    (2, 'Marlen', 'Murcia', '1001234568', '2000-05-15', 'marlen@tourinvest.com', '$2b$10$TplImVf8oPv4bpeii9kdr.x4kyeIiM62iz4774mbd/1F2hbpGoFDO'),
+    (3, 'Juan', 'Fuentes', '1001234567', '1998-11-27', 'juan@tourinvest.com', '$2b$10$9jl9pH5V1l.aEbCx1sKv.OdkXLgpd6JbyuxJPqkah9SBMGCHBAfNq');
 
 INSERT INTO
     empresas (nombre, sector, pais, simbolo)
@@ -219,17 +228,11 @@ SELECT MIN(precio) FROM acciones;
 SELECT SUM(precio_compra * cantidad) AS TotalInvertido
 FROM inversiones;
 
-UPDATE acciones
-SET precio = 210 WHERE id_accion = 1;
-
-UPDATE usuarios
-SET correo = 'nuevo@tourinvest.com' WHERE id_usuario = 1;
-
-UPDATE alertas
-SET estado = 'Cumplida' WHERE id_alerta = 1;
-
-DELETE FROM reportes WHERE id_reporte = 2;
-DELETE FROM alertas WHERE id_alerta = 2;
+-- NOTA: las sentencias UPDATE/DELETE/TRIGGER de la seccion "PRUEBAS DE ESCRITURA"
+-- se movieron a `sql/pruebas-escritura.sql` porque destruyen los datos semilla
+-- (renombraban el correo del administrador y borraban alertas/reportes), lo que
+-- hacia fallar las pruebas de Postman y el arranque de la app. Aqui el seed
+-- queda LIMPIO: tras ejecutarlo, los 3 usuarios de prueba estan disponibles.
 
 SELECT * FROM empresas WHERE nombre LIKE '%Apple%';
 SELECT * FROM usuarios WHERE nombre1 LIKE '%Juan%';

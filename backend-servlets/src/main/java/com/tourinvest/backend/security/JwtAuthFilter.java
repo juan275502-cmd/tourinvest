@@ -17,6 +17,9 @@ import java.io.IOException;
 @Component
 public class JwtAuthFilter extends OncePerRequestFilter {
 
+    private static final org.slf4j.Logger logger =
+            org.slf4j.LoggerFactory.getLogger(JwtAuthFilter.class);
+
     private final JwtUtil jwtUtil;
     private final UsuarioRepository usuarioRepository;
 
@@ -37,18 +40,32 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             return;
         }
 
-        String token = header.substring(7);
-        String correo = jwtUtil.extraerCorreo(token);
+        String token = header.substring(7).trim();
+        if (token.isEmpty()) {
+            filterChain.doFilter(request, response);
+            return;
+        }
 
-        if (correo != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            usuarioRepository.findByCorreo(correo).ifPresent(usuario -> {
-                if (jwtUtil.esTokenValido(token, correo)) {
-                    var authToken = new UsernamePasswordAuthenticationToken(
-                            usuario, null, usuario.getAuthorities());
-                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                    SecurityContextHolder.getContext().setAuthentication(authToken);
-                }
-            });
+        // Un token caducado, malformado o firmado con otra clave no debe tumbar la
+        // aplicacion con un 500: se ignora y la peticion sigue sin autenticar, de
+        // modo que SecurityConfig responda 401 Unauthorized de forma uniforme.
+        try {
+            String correo = jwtUtil.extraerCorreo(token);
+
+            if (correo != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                usuarioRepository.findByCorreo(correo).ifPresent(usuario -> {
+                    if (jwtUtil.esTokenValido(token, correo)) {
+                        var authToken = new UsernamePasswordAuthenticationToken(
+                                usuario, null, usuario.getAuthorities());
+                        authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                        SecurityContextHolder.getContext().setAuthentication(authToken);
+                    }
+                });
+            }
+        } catch (Exception e) {
+            // Token invalido/expirado: se loguea y se deja pasar sin principal.
+            logger.debug("Token JWT rechazado: {}", e.getMessage());
+            SecurityContextHolder.clearContext();
         }
 
         filterChain.doFilter(request, response);

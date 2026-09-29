@@ -1,4 +1,6 @@
-const API_BASE_URL = "http://localhost:8080";
+// URL canonica de la API: www.tourinvest.com (mapeado a 127.0.0.1 en el
+// archivo de hosts del sistema). Ver STARTUP.md -> "Convencion de hostname".
+const API_BASE_URL = "http://www.tourinvest.com:8080";
 
 function obtenerToken() {
   const token = sessionStorage.getItem("tourinvest_token");
@@ -96,11 +98,20 @@ function renderUsuarios() {
     .map((usuario) => {
       const esActivo = usuario.estado === "Activo";
       const esUsuarioPropio = usuario.correo === correoPropio;
-      const botonAccion = esUsuarioPropio
-        ? `<span style="color: var(--texto-secundario); font-size: 0.8rem;">Tu cuenta</span>`
-        : esActivo
-        ? `<button class="boton-fila boton-fila--cancelar" onclick="suspenderUsuario(${usuario.idUsuario})">Suspender</button>`
-        : `<button class="boton-fila" onclick="activarUsuario(${usuario.idUsuario})">Activar</button>`;
+      // Escapa comillas para poder inyectar el nombre en el onclick sin romperlo.
+      const nombreSeguro = (usuario.nombreCompleto || "").replace(/'/g, "\\'");
+      // Acciones disponibles segun el estado del usuario.
+      const acciones = [
+        `<button class="boton-fila" onclick="abrirModalEditarUsuario(${usuario.idUsuario})">Editar</button>`,
+        esUsuarioPropio
+          ? `<span style="color: var(--texto-secundario); font-size: 0.8rem;">Tu cuenta</span>`
+          : esActivo
+          ? `<button class="boton-fila boton-fila--cancelar" onclick="suspenderUsuario(${usuario.idUsuario})">Suspender</button>`
+          : `<button class="boton-fila" onclick="activarUsuario(${usuario.idUsuario})">Activar</button>`,
+        esUsuarioPropio
+          ? ""
+          : `<button class="boton-fila boton-fila--cancelar" onclick="eliminarUsuario(${usuario.idUsuario}, '${nombreSeguro}')">Eliminar</button>`,
+      ].filter(Boolean).join(" ");
 
       return `
         <tr>
@@ -108,7 +119,7 @@ function renderUsuarios() {
           <td>${usuario.correo}</td>
           <td>${usuario.rol}</td>
           <td><span class="estado-pill estado-pill--${esActivo ? "activa" : "cancelada"}">${usuario.estado}</span></td>
-          <td>${botonAccion}</td>
+          <td style="white-space: nowrap;">${acciones}</td>
         </tr>`;
     })
     .join("");
@@ -126,6 +137,33 @@ async function suspenderUsuario(idUsuario) {
 async function activarUsuario(idUsuario) {
   const respuesta = await llamarApi(`/admin/usuarios/${idUsuario}/activar`, { method: "PATCH" });
   if (respuesta && respuesta.ok) cargarUsuarios();
+}
+
+// ---------- CRUD de usuarios ----------
+// La logica vive en js/usuarios.js (modulo compartido). Aqui solo se delegan
+// los onclick de la tabla para mantener este archivo centrado en la navegacion.
+
+const U = () => window.TourInvestUI.Usuarios;
+
+function abrirModalCrearUsuario() {
+  U().abrir(null);
+}
+
+function abrirModalEditarUsuario(idUsuario) {
+  U().abrir(usuariosCache.find((u) => u.idUsuario === idUsuario));
+}
+
+function cerrarModalUsuario() {
+  U().cerrar();
+}
+
+function guardarUsuario(evento) {
+  // El id viaja en data-id-usuario para saber si es alta o edicion.
+  return U().guardar(evento);
+}
+
+function eliminarUsuario(idUsuario, nombre) {
+  return U().eliminar(idUsuario, nombre);
 }
 
 // ---------- Vista: Empresas (Gestión de Empresas — CRUD, mockup 6.9) ----------
@@ -284,9 +322,12 @@ async function eliminarEmpresa(idEmpresa, nombre) {
 
 // ---------- Perfil / cierre de sesión ----------
 
+// El perfil ahora se pide a la API (GET /perfil) en vez de solo leer sessionStorage:
+// asi los datos editados se reflejan siempre, y cada rol ve SU propio perfil.
 function cargarPerfil() {
-  document.getElementById("perfil-nombre").textContent = sessionStorage.getItem("tourinvest_nombre") || "—";
-  document.getElementById("perfil-rol").textContent = sessionStorage.getItem("tourinvest_rol") || "—";
+  if (window.TourInvestUI && window.TourInvestUI.Perfil) {
+    window.TourInvestUI.Perfil.cargar();
+  }
 }
 
 function cerrarSesion() {

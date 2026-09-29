@@ -51,12 +51,12 @@ class AuthControllerTest {
     @Test
     @DisplayName("POST /auth/login: con credenciales válidas responde 200 con token, nombre y rol")
     void login_credencialesValidas_devuelve200() throws Exception {
-        when(authService.login(any())).thenReturn(new LoginResponse("token-abc", "Juan", "juan@tourinvest.com", "Inversionista"));
+        when(authService.login(any())).thenReturn(new LoginResponse("token-abc", "Juan", "kike@tourinvest.com", "Inversionista"));
 
         mockMvc.perform(post("/auth/login")
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(Map.of(
-                                "correo", "juan@tourinvest.com",
+                                "correo", "kike@tourinvest.com",
                                 "contrasena", "123456"))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.token").value("token-abc"))
@@ -84,7 +84,7 @@ class AuthControllerTest {
         mockMvc.perform(post("/auth/login")
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(Map.of(
-                                "correo", "juan@tourinvest.com",
+                                "correo", "kike@tourinvest.com",
                                 "contrasena", "clave-mala"))))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.mensaje").value("Correo o contraseña incorrectos"));
@@ -97,7 +97,7 @@ class AuthControllerTest {
     void registro_datosValidos_devuelve201() throws Exception {
         when(authService.registrar(any(), any())).thenAnswer(invocation -> {
             var usuario = new com.tourinvest.backend.model.Usuario();
-            usuario.setCorreo("nuevo@tourinvest.com");
+            usuario.setCorreo("kike@tourinvest.com");
             return usuario;
         });
 
@@ -108,7 +108,7 @@ class AuthControllerTest {
                                 "apellido1", "Torres",
                                 "cedula", "1112223334",
                                 "fechaNacimiento", LocalDate.of(1999, 3, 20).toString(),
-                                "correo", "nuevo@tourinvest.com",
+                                "correo", "kike@tourinvest.com",
                                 "contrasena", "123456",
                                 "confirmarContrasena", "123456"))))
                 .andExpect(status().isCreated());
@@ -124,7 +124,7 @@ class AuthControllerTest {
                                 "apellido1", "Torres",
                                 "cedula", "1112223334",
                                 "fechaNacimiento", LocalDate.of(1999, 3, 20).toString(),
-                                "correo", "nuevo@tourinvest.com",
+                                "correo", "kike@tourinvest.com",
                                 "contrasena", "123456",
                                 "confirmarContrasena", "otraClave"))))
                 .andExpect(status().isBadRequest())
@@ -137,7 +137,7 @@ class AuthControllerTest {
         mockMvc.perform(post("/auth/registro")
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(Map.of(
-                                "correo", "nuevo@tourinvest.com",
+                                "correo", "kike@tourinvest.com",
                                 "contrasena", "123456",
                                 "confirmarContrasena", "123456"))))
                 .andExpect(status().isBadRequest())
@@ -152,12 +152,12 @@ class AuthControllerTest {
     void recuperar_correoValido_devuelve200ConMensajeGenerico() throws Exception {
         mockMvc.perform(post("/auth/recuperar")
                         .contentType("application/json")
-                        .content(objectMapper.writeValueAsString(Map.of("correo", "juan@tourinvest.com"))))
+                        .content(objectMapper.writeValueAsString(Map.of("correo", "kike@tourinvest.com"))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.mensaje").value(
                         "Si el correo está registrado, recibirás un enlace para restablecer tu contraseña."));
 
-        verify(authService).solicitarRecuperacion("juan@tourinvest.com");
+        verify(authService).solicitarRecuperacion("kike@tourinvest.com");
     }
 
     @Test

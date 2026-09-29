@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.hamcrest.Matchers.hasSize;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -16,7 +17,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import org.springframework.test.web.servlet.MockMvc;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -65,9 +65,15 @@ class AnalistaControllerTest {
         analistaAutenticado = new Usuario();
         analistaAutenticado.setIdUsuario(2);
         analistaAutenticado.setNombre1("Laura");
-        analistaAutenticado.setCorreo("laura@tourinvest.com");
+        analistaAutenticado.setCorreo("marlen@tourinvest.com");
         analistaAutenticado.setContrasena("$2a$10$hash");
         analistaAutenticado.setRol(rolAnalista);
+    }
+
+    /** Evita que el contexto de autenticacion de un test contamine al siguiente. */
+    @AfterEach
+    void limpiarContexto() {
+        AutenticadoComo.limpiar();
     }
 
     @Test
@@ -76,7 +82,7 @@ class AnalistaControllerTest {
         when(reporteService.listarTodos()).thenReturn(List.of(
                 new ReporteResumenDTO(1, "Reporte Apple", "Tendencia alcista", "Apple", "Laura", LocalDateTime.now())));
 
-        mockMvc.perform(get("/analista/reportes").with(user(analistaAutenticado)))
+        mockMvc.perform(get("/analista/reportes").with(AutenticadoComo.usuario(analistaAutenticado)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath("$[0].nombreEmpresa").value("Apple"));
@@ -89,7 +95,7 @@ class AnalistaControllerTest {
                 new ReporteResumenDTO(5, "Análisis Tesla", "Alta volatilidad", "Tesla", "Laura", LocalDateTime.now()));
 
         mockMvc.perform(post("/analista/reportes")
-                        .with(user(analistaAutenticado))
+                        .with(AutenticadoComo.usuario(analistaAutenticado))
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(Map.of(
                                 "idEmpresa", 4,
@@ -104,7 +110,7 @@ class AnalistaControllerTest {
     @DisplayName("POST /analista/reportes: sin título, responde 400 por validación")
     void crearReporte_sinTitulo_devuelve400() throws Exception {
         mockMvc.perform(post("/analista/reportes")
-                        .with(user(analistaAutenticado))
+                        .with(AutenticadoComo.usuario(analistaAutenticado))
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(Map.of("idEmpresa", 4))))
                 .andExpect(status().isBadRequest())
@@ -118,7 +124,7 @@ class AnalistaControllerTest {
                 .thenReturn(new IndicadorLiquidezResponse(new BigDecimal("1.2000")));
 
         mockMvc.perform(post("/analista/indicadores/liquidez")
-                        .with(user(analistaAutenticado))
+                        .with(AutenticadoComo.usuario(analistaAutenticado))
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(Map.of(
                                 "activoCorriente", 45000,
@@ -134,7 +140,7 @@ class AnalistaControllerTest {
                 .thenThrow(new ArithmeticException("El pasivo corriente no puede ser cero"));
 
         mockMvc.perform(post("/analista/indicadores/liquidez")
-                        .with(user(analistaAutenticado))
+                        .with(AutenticadoComo.usuario(analistaAutenticado))
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(Map.of(
                                 "activoCorriente", 45000,

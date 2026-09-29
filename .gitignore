@@ -9,12 +9,29 @@ __pycache__/
 .venv/
 venv/
 
+# Secretos / configuracion local (NUNCA versionar)
+# .env contiene DB_PASSWORD y JWT_SECRET reales.
+.env
+.env.local
+*.env
+!.env.example
+backend-servlets/src/main/resources/application-local.properties
+application-local.properties
+
+# Logs de produccion (access_log, tourinvest-backend.log)
+logs/
+*.log
+
 # IDE / Editor
 .idea/
 *.iml
 .vscode/
-*.log
+
+# Postman (exportaciones locales del runner, no la coleccion del repo)
+newman-report/
 
 # OS
 .DS_Store
 Thumbs.db
+
+/docs/

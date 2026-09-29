@@ -10,8 +10,10 @@ import java.sql.SQLException;
  */
 public class ConexionJDBC {
 
+    // Convencion de hostname del proyecto: 127.0.0.1, nunca `localhost`
+    // (en IPv6 `localhost` resuelve a ::1 y el driver buscaria el socket unix).
     private static final String URL =
-            "jdbc:mysql://localhost:3306/tourinvest?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true";
+            "jdbc:mysql://127.0.0.1:3306/tourinvest?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true";
     private static final String USUARIO = "root";
     private static final String CONTRASENA = "";
 

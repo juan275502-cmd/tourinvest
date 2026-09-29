@@ -4,6 +4,14 @@
     "version": "2.0.0",
     "tasks": [
         {
+            "label": "TourInvest: 0-run proyecto completo (API :8080 + sitio :80)",
+            "type": "shell",
+            "command": "powershell.exe",
+            "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}\\setup.ps1", "run"],
+            "options": { "cwd": "${workspaceFolder}" },
+            "problemMatcher": []
+        },
+        {
             "label": "TourInvest: 1-check requisitos",
             "type": "shell",
             "command": "powershell.exe",
@@ -30,7 +38,7 @@
             "problemMatcher": []
         },
         {
-            "label": "TourInvest: 4-run frontend :8081 (abre navegador)",
+            "label": "TourInvest: 4-run frontend puerto 80 (abre navegador)",
             "type": "shell",
             "command": "powershell.exe",
             "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}\\setup.ps1", "run-frontend"],

@@ -8,6 +8,7 @@ import com.tourinvest.backend.model.Usuario;
 import com.tourinvest.backend.repository.UsuarioRepository;
 import com.tourinvest.backend.security.JwtUtil;
 import com.tourinvest.backend.service.PortafolioService;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -25,7 +26,6 @@ import java.util.NoSuchElementException;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -64,9 +64,15 @@ class InversionistaControllerTest {
         usuarioAutenticado = new Usuario();
         usuarioAutenticado.setIdUsuario(3);
         usuarioAutenticado.setNombre1("Carlos");
-        usuarioAutenticado.setCorreo("carlos@tourinvest.com");
+        usuarioAutenticado.setCorreo("juan@tourinvest.com");
         usuarioAutenticado.setContrasena("$2a$10$hash");
         usuarioAutenticado.setRol(rolInversionista);
+    }
+
+    /** Evita que el contexto de autenticacion de un test contamine al siguiente. */
+    @AfterEach
+    void limpiarContexto() {
+        AutenticadoComo.limpiar();
     }
 
     @Test
@@ -82,7 +88,7 @@ class InversionistaControllerTest {
 
         when(portafolioService.obtenerResumen(any(Usuario.class))).thenReturn(resumen);
 
-        mockMvc.perform(get("/inversionista/resumen").with(user(usuarioAutenticado)))
+        mockMvc.perform(get("/inversionista/resumen").with(AutenticadoComo.usuario(usuarioAutenticado)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.nombreUsuario").value("Carlos"))
                 .andExpect(jsonPath("$.valorTotal").value(1955.00))
@@ -100,7 +106,7 @@ class InversionistaControllerTest {
         when(portafolioService.agregarInversion(eq(usuarioAutenticado), any())).thenReturn(posicion);
 
         mockMvc.perform(post("/inversionista/portafolio/inversiones")
-                        .with(user(usuarioAutenticado))
+                        .with(AutenticadoComo.usuario(usuarioAutenticado))
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(Map.of("idAccion", 1, "cantidad", 10))))
                 .andExpect(status().isCreated())
@@ -112,7 +118,7 @@ class InversionistaControllerTest {
     @DisplayName("POST /inversionista/portafolio/inversiones: con cantidad menor a 1, responde 400")
     void agregarInversion_cantidadInvalida_devuelve400() throws Exception {
         mockMvc.perform(post("/inversionista/portafolio/inversiones")
-                        .with(user(usuarioAutenticado))
+                        .with(AutenticadoComo.usuario(usuarioAutenticado))
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(Map.of("idAccion", 1, "cantidad", 0))))
                 .andExpect(status().isBadRequest())
@@ -126,7 +132,7 @@ class InversionistaControllerTest {
                 .thenThrow(new NoSuchElementException("La acción indicada no existe"));
 
         mockMvc.perform(post("/inversionista/portafolio/inversiones")
-                        .with(user(usuarioAutenticado))
+                        .with(AutenticadoComo.usuario(usuarioAutenticado))
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(Map.of("idAccion", 999, "cantidad", 5))))
                 .andExpect(status().isNotFound())
