@@ -34,4 +34,9 @@ newman-report/
 .DS_Store
 Thumbs.db
 
-/docs/
+# Agrega  como personal del proyecto
+target/
+*.class
+.env.local
+__pycache__/
+*.pyc
