@@ -51,7 +51,7 @@ $script:CheckOk = $true
 $script:Sitio = "www.tourinvest.com"         # nombre visible en el navegador
 $script:IpLoopback = "127.0.0.1"            # direccion real (loopback IPv4)
 $script:PuertoApi = 8080                     # API Spring Boot
-$script:PaginaInicio = "/view/login.html"   # punto de entrada de la aplicacion
+$script:PaginaInicio = ""   # punto de entrada de la aplicacion
 
 # --- Carga opcional del archivo .env (si existe) ----------------------------
 # Permite definir DB_PASSWORD, JWT_SECRET, etc. SIN escribirlos en
@@ -164,8 +164,15 @@ function Set-TituloVentana([string]$Texto) {
 # URL del sitio. En el puerto 80 NO se escribe ":80": se ve como un dominio
 # de verdad (http://www.tourinvest.com).
 function Get-UrlWeb([string]$Ruta = "") {
-    if ([int]$script:PuertoWeb -eq 80) { return "http://$($script:Sitio)$Ruta" }
-    return "http://$($script:Sitio):$($script:PuertoWeb)$Ruta"
+    # Equivalente a url_web() de setup.sh: puerto 80 => URL limpia sin ":80".
+    # Normaliza la barra entre el dominio y la pagina: sin slash el navegador
+    # pediria "www.tourinvest.comindex.html" (DNS inexistente) y romperia el
+    # login con "No fue posible conectar con el servidor".
+    $base = "http://$($script:Sitio)"
+    if ([int]$script:PuertoWeb -ne 80) { $base += ":$($script:PuertoWeb)" }
+    $p = "$Ruta".Trim().TrimStart("/")
+    if ([string]::IsNullOrWhiteSpace($p)) { return $base }
+    return "$base/$p"
 }
 
 # Indica si el puerto esta libre ahora mismo. En Windows los puertos <1024 no
@@ -188,6 +195,32 @@ function Show-PuertoWebOcupado {
     Write-Host "        taskkill /IM httpd.exe /F   # Apache" -ForegroundColor Red
     Write-Host "      O usa otro puerto en .env:  PUERTO_WEB=8081" -ForegroundColor Red
     Write-Host "      (y entonces la URL llevara :8081 al final)." -ForegroundColor Red
+}
+
+# Verifica que el nombre visible resuelva a 127.0.0.1 ANTES de arrancar.
+# Si www.tourinvest.com resuelve a ::1 (IPv6) o a otra IP, el sitio carga pero
+# el fetch a la API falla con "No fue posible conectar con el servidor".
+# Convencion documentada en setup.sh (SITIO/IP_LOOPBACK): nombre visible vs
+# direccion real. Solo diagnostica; no cambia ningun archivo del sistema.
+function Test-ResolucionSitio {
+    try {
+        $ips = [System.Net.Dns]::GetHostAddresses($script:Sitio) | ForEach-Object { $_.IPAddressToString }
+    } catch {
+        $ips = @()
+    }
+    if ($ips -contains $script:IpLoopback) { return $true }
+    Write-Host "  [X] '$($script:Sitio)' no resuelve a $($script:IpLoopback)." -ForegroundColor Red
+    if ($ips.Count -gt 0 -and -not [string]::IsNullOrWhiteSpace("$ips")) {
+        Write-Host "      Resuelve a: $($ips -join ', ')" -ForegroundColor Red
+    } else {
+        Write-Host "      No resuelve a ninguna direccion (falta la entrada en hosts)." -ForegroundColor Red
+    }
+    Write-Host "      El sitio cargara, pero el login fallara con 'No fue posible" -ForegroundColor Red
+    Write-Host "      conectar con el servidor' porque el navegador no llega a la API." -ForegroundColor Red
+    Write-Host "      Agrega esta linea al archivo de hosts de Windows" -ForegroundColor Yellow
+    Write-Host "      (C:\Windows\System32\drivers\etc\hosts, con Notepad como Administrador):" -ForegroundColor Yellow
+    Write-Host "        $($script:IpLoopback)   $($script:Sitio)" -ForegroundColor Yellow
+    return $false
 }
 
 # Comprueba si el puerto TCP responde, sin depender de mysqladmin.
@@ -256,6 +289,26 @@ function Show-DiagnosticoBD {
     Write-Host ""
 }
 
+# Comprobacion real de credenciales contra MySQL. Reutilizada por check/seed/run-*.
+# Equivalente a mysql_autentica() de setup.sh: con clave usa MYSQL_PWD (nunca
+# --password=, que falla con caracteres especiales y expone la clave en la
+# linea de comandos); sin clave no se pasa ningun flag de password.
+function Test-MysqlAuth {
+    param([string]$Password, [string]$Query = "SELECT 1;")
+    if ($Password) {
+        $env:MYSQL_PWD = $Password
+        try {
+            & $script:Mysql -h $script:DbHost -P $script:DbPort -u $script:DbUser -e $Query 2>&1 | Out-Null
+            return ($LASTEXITCODE -eq 0)
+        } finally {
+            Remove-Item Env:\MYSQL_PWD -ErrorAction SilentlyContinue
+        }
+    } else {
+        & $script:Mysql -h $script:DbHost -P $script:DbPort -u $script:DbUser -e $Query 2>&1 | Out-Null
+        return ($LASTEXITCODE -eq 0)
+    }
+}
+
 # Crea el archivo .env con los valores por defecto si todavia no existe.
 # .env esta en .gitignore: la contrasena nunca se versiona.
 function Initialize-EnvFile {
@@ -304,8 +357,7 @@ function Initialize-DbPassword {
 
     if ($plano) {
         # Valida antes de guardar: asi no persistimos una contrasena equivocada.
-        & $script:Mysql -h $script:DbHost -P $script:DbPort -u $script:DbUser "--password=$plano" -e "SELECT 1;" 2>$null | Out-Null
-        if ($LASTEXITCODE -ne 0) {
+        if (-not (Test-MysqlAuth -Password $plano)) {
             Write-Host "   [X] MySQL rechazo esa contrasena. Vuelve a intentarlo." -ForegroundColor Red
             exit 1
         }
@@ -320,8 +372,7 @@ function Initialize-DbPassword {
         Write-Host "   Contrasena correcta. Guardada en .env (NO versionado)." -ForegroundColor Green
     } else {
         # Sin contrasena: puede ser valido, pero comprobamos.
-        & $script:Mysql -h $script:DbHost -P $script:DbPort -u $script:DbUser -e "SELECT 1;" 2>$null | Out-Null
-        if ($LASTEXITCODE -ne 0) {
+        if (-not (Test-MysqlAuth -Password "")) {
             Write-Host "   [X] MySQL no acepta '$($script:DbUser)' sin contrasena. Edita .env y ponla." -ForegroundColor Red
             exit 1
         }
@@ -376,13 +427,9 @@ function Show-EstadoBD {
         $servicios = Test-RunningService
         foreach ($s in $servicios) { Write-Host "         servicio '$($s.Name)': $($s.Status)" }
         $pw = if ($env:DB_PASSWORD) { $env:DB_PASSWORD } else { "" }
-        $null = & $script:Mysql -h $script:DbHost -P $script:DbPort -u $script:DbUser `
-                    "--password=$pw" -e "SELECT 1;" 2>&1
-        if ($LASTEXITCODE -eq 0) {
+        if (Test-MysqlAuth -Password $pw) {
             Write-Host "  [OK] Autenticacion MySQL correcta (usuario '$($script:DbUser)')"
-            $null = & $script:Mysql -h $script:DbHost -P $script:DbPort -u $script:DbUser `
-                        "--password=$pw" -e "USE $($script:DbName); SELECT 1;" 2>&1
-            if ($LASTEXITCODE -eq 0) {
+            if (Test-MysqlAuth -Password $pw -Query "USE $($script:DbName); SELECT 1;") {
                 Write-Host "  [OK] La base '$($script:DbName)' existe"
             } else {
                 Write-Host "  [--] La base '$($script:DbName)' aun NO existe. Ejecuta: .\setup.ps1 seed"
@@ -484,8 +531,14 @@ function Invoke-Seed {
         exit 1
     }
     # Con la contrasena de .env si existe; si no, se pide de forma interactiva.
+    # Igual que setup.sh: con clave se usa MYSQL_PWD, sin clave se pide con -p.
     if ($env:DB_PASSWORD) {
-        Get-Content $sql | & $script:Mysql --default-character-set=utf8mb4 -h $script:DbHost -P $script:DbPort -u $script:DbUser "--password=$($env:DB_PASSWORD)"
+        $env:MYSQL_PWD = $env:DB_PASSWORD
+        try {
+            Get-Content $sql | & $script:Mysql --default-character-set=utf8mb4 -h $script:DbHost -P $script:DbPort -u $script:DbUser
+        } finally {
+            Remove-Item Env:\MYSQL_PWD -ErrorAction SilentlyContinue
+        }
     } else {
         Get-Content $sql | & $script:Mysql --default-character-set=utf8mb4 -h $script:DbHost -P $script:DbPort -u $script:DbUser -p
     }
@@ -617,6 +670,11 @@ function Start-All {
     Initialize-DbPassword
     Build-JarIfNeeded
 
+    # Igual que setup.sh antes de lanzar: si el nombre visible no resuelve al
+    # loopback, el navegador nunca llegara a la API y el login mostrara
+    # "No fue posible conectar con el servidor". Solo avisa, no bloquea.
+    Test-ResolucionSitio | Out-Null
+
     $logDir = Join-Path $script:Root "logs"
     New-Item -ItemType Directory -Force -Path $logDir | Out-Null
     $logApi  = Join-Path $logDir "backend.log"
@@ -646,6 +704,9 @@ function Start-All {
         if (-not $listo) {
             Write-Host "  [X] La API no respondio en el puerto $($script:PuertoApi). Ultimas lineas de logs\backend.log:" -ForegroundColor Red
             if (Test-Path $logApi) { Get-Content $logApi -Tail 15 | ForEach-Object { Write-Host "      $_" -ForegroundColor Red } }
+            if (Test-Path $errApi) { Get-Content $errApi -Tail 15 | ForEach-Object { Write-Host "      $_" -ForegroundColor Red } }
+            Write-Host "      Si el log esta vacio, ejecuta en otra ventana: .\setup.ps1 run-backend-fast" -ForegroundColor Red
+            Write-Host "      (ahi se ve el error real de Spring/Hibernate en directo)." -ForegroundColor Red
             Write-Host "      Para ver el error completo ejecuta: .\setup.ps1 run-backend" -ForegroundColor Red
             exit 1
         }

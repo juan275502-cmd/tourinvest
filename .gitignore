@@ -40,3 +40,5 @@ target/
 .env.local
 __pycache__/
 *.pyc
+/postman/
+/.postman/
