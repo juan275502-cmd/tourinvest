@@ -51,3 +51,4 @@ target/
 .env.local
 __pycache__/
 *.pyc
+backend-python/venv/
