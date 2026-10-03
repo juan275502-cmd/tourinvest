@@ -1036,6 +1036,33 @@ th {
   min-height: 14px;
 }
 
+/* ---------- Checklist de reglas de contraseña (registro.html + auth.js) ----------
+   Cada <li data-regla="..."> pasa a .regla-ok cuando la regla se cumple. */
+.reglas-contrasena {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  font-size: 12px;
+  color: var(--texto-secundario);
+}
+.reglas-contrasena li {
+  position: relative;
+  padding-left: 20px;
+  margin-bottom: 3px;
+  line-height: 1.5;
+}
+.reglas-contrasena li::before {
+  content: "○";
+  position: absolute;
+  left: 2px;
+}
+.reglas-contrasena li.regla-ok {
+  color: var(--verde);
+}
+.reglas-contrasena li.regla-ok::before {
+  content: "✓";
+}
+
 /* ---------- Dashboard: navegación de vistas (.sidebar__link / .vista) ---------- */
 .sidebar__link,
 .sidebar-link,

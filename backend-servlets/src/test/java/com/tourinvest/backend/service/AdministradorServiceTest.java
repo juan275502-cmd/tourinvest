@@ -144,6 +144,9 @@ class AdministradorServiceTest {
 
     // ---------- CRUD de usuarios ----------
 
+    /** Cumple la política de contraseña: 12 caracteres, 2 mayús, 2 díg., 2 especiales. */
+    private static final String CLAVE_VALIDA = "TourInvest2026*!";
+
     private UsuarioAdminRequest peticionCrear() {
         UsuarioAdminRequest request = new UsuarioAdminRequest();
         request.setNombre1("Ana");
@@ -151,7 +154,7 @@ class AdministradorServiceTest {
         request.setCedula("1009876543");
         request.setFechaNacimiento(java.time.LocalDate.of(1997, 4, 12));
         request.setCorreo("ana@tourinvest.com");
-        request.setContrasena("123456");
+        request.setContrasena(CLAVE_VALIDA);
         request.setRol(Rol.NombreRol.Analista);
         return request;
     }
@@ -174,7 +177,7 @@ class AdministradorServiceTest {
         Rol rolAnalista = new Rol(Rol.NombreRol.Analista);
         rolAnalista.setIdRol(2);
         when(rolRepository.findByNombre(Rol.NombreRol.Analista)).thenReturn(Optional.of(rolAnalista));
-        when(passwordEncoder.encode("123456")).thenReturn("$2b$10$hashNuevo");
+        when(passwordEncoder.encode(CLAVE_VALIDA)).thenReturn("$2b$10$hashNuevo");
         when(usuarioRepository.save(any(Usuario.class))).thenAnswer(i -> i.getArgument(0));
 
         UsuarioResumenDTO dto = administradorService.crear(peticionCrear());
@@ -182,7 +185,20 @@ class AdministradorServiceTest {
         assertThat(dto.getCorreo()).isEqualTo("ana@tourinvest.com");
         assertThat(dto.getRol()).isEqualTo("Analista");
         assertThat(dto.getEstado()).isEqualTo("Activo");
-        verify(passwordEncoder).encode("123456");
+        verify(passwordEncoder).encode(CLAVE_VALIDA);
+    }
+
+    @Test
+    @DisplayName("crear: con una contraseña débil responde 400 indicando qué falta")
+    void crear_contrasenaDebil_lanzaError() {
+        UsuarioAdminRequest request = peticionCrear();
+        request.setContrasena("123456");
+
+        assertThatThrownBy(() -> administradorService.crear(request))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("mínimo 12 caracteres");
+
+        verify(usuarioRepository, never()).save(any());
     }
 
     @Test
@@ -221,20 +237,37 @@ class AdministradorServiceTest {
         verify(passwordEncoder, never()).encode(any());
     }
     @Test
-    @DisplayName("actualizar: si viene contraseña nueva, la hashea y la cambia")
+    @DisplayName("actualizar: si viene contraseña nueva válida, la hashea y la cambia")
     void actualizar_conContrasena_laCambia() {
         when(usuarioRepository.findById(3)).thenReturn(Optional.of(inversionista));
         when(rolRepository.findByNombre(Rol.NombreRol.Inversionista))
                 .thenReturn(Optional.of(inversionista.getRol()));
         when(usuarioRepository.save(any(Usuario.class))).thenAnswer(i -> i.getArgument(0));
-        when(passwordEncoder.encode("claveNueva9")).thenReturn("$2b$10$hashNuevo");
+        when(passwordEncoder.encode(CLAVE_VALIDA)).thenReturn("$2b$10$hashNuevo");
+
+        UsuarioAdminRequest request = peticionEditar("kike@tourinvest.com");
+        request.setContrasena(CLAVE_VALIDA);
+        administradorService.actualizar(3, request);
+
+        verify(passwordEncoder).encode(CLAVE_VALIDA);
+        assertThat(inversionista.getPassword()).isEqualTo("$2b$10$hashNuevo");
+    }
+
+    @Test
+    @DisplayName("actualizar: con una contraseña débil responde 400 y no la cambia")
+    void actualizar_contrasenaDebil_lanzaError() {
+        when(usuarioRepository.findById(3)).thenReturn(Optional.of(inversionista));
+        when(rolRepository.findByNombre(Rol.NombreRol.Inversionista))
+                .thenReturn(Optional.of(inversionista.getRol()));
 
         UsuarioAdminRequest request = peticionEditar("kike@tourinvest.com");
         request.setContrasena("claveNueva9");
-        administradorService.actualizar(3, request);
 
-        verify(passwordEncoder).encode("claveNueva9");
-        assertThat(inversionista.getPassword()).isEqualTo("$2b$10$hashNuevo");
+        assertThatThrownBy(() -> administradorService.actualizar(3, request))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("mínimo 12 caracteres");
+
+        verify(passwordEncoder, never()).encode(any());
     }
 
     @Test

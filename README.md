@@ -107,6 +107,58 @@ python app.py
 # http://127.0.0.1:5000/api/health
 ```
 
+## Validación de datos (registro, login y recuperación)
+
+La regla vive en el **backend** (`com.tourinvest.backend.validation`) y el
+frontend la replica en `frontend/js/auth.js` para mostrar el error bajo cada
+campo sin llegar al servidor. Ambos lados aplican los mismos criterios y una
+prueba (`frontend/tests/test_dashboard_wiring.py`) verifica que no se separen.
+
+### Contraseña
+
+Mínimo **12 caracteres** y máximo 72 (límite de BCrypt), con al menos:
+
+| Requisito | Mínimo |
+|---|---|
+| Letras mayúsculas | 2 |
+| Letras minúsculas | 2 |
+| Números | 2 |
+| Caracteres especiales | 2 |
+
+Ejemplo válido: `TourInvest2026*!` · Inválido: `123456`
+
+Se exige al **registro público**, al **alta/edición de usuarios del panel de
+administrador** y al **cambio de contraseña del perfil**. El **login no** exige
+complejidad: ahí la contraseña solo se verifica contra el hash, de modo que las
+cuentas creadas antes de esta regla (las de `query.sql`, clave `123456`) siguen
+pudiendo entrar.
+
+Si faltan varios requisitos, el mensaje los enumera todos:
+*"La contraseña debe cumplir: mínimo 12 caracteres; al menos 2 letras
+mayúsculas; al menos 2 números."*
+
+### Correo, nombre, cédula y fecha
+
+- **Correo:** exige `@` **y** una extensión de dominio (`usuario@dominio.com`).
+  El `@Email` de Hibernate acepta `usuario@dominio` sin extensión, por eso el
+  proyecto usa la restricción propia `@CorreoValido`.
+- **Nombre / apellido:** letras del español (tildes, `ñ`, diéresis) separadas
+  por espacios, guiones o apóstrofos. Se acepta `María José`; se rechaza
+  `Juan123` o `Juan@`. Tope de 30 y 100 caracteres.
+- **Cédula:** solo dígitos, entre 6 y 20.
+- **Fecha de nacimiento:** obligatoria, con formato `AAAA-MM-DD` y anterior a hoy.
+
+### Pruebas
+
+```bash
+cd backend-servlets && mvn test                                # 143 pruebas
+node frontend/tests/auth_validation_test.js                    # casos PV-01 a PV-17
+python3 -m unittest discover -s frontend/tests -p 'test_*.py'  # 16 pruebas
+```
+
+El detalle de los casos de prueba (PV-01 a PV-17, PF e incidencias) está en
+[`PRUEBAS_VALIDACION.md`](PRUEBAS_VALIDACION.md).
+
 ## Notas de diseño (coherencia)
 
 - **Una sola pila canónica:** el frontend y los dashboards consumen el backend

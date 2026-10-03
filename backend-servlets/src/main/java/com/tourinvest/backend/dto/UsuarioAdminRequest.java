@@ -5,7 +5,10 @@ import java.time.LocalDate;
 import com.tourinvest.backend.model.Rol;
 import com.tourinvest.backend.model.Usuario;
 
-import jakarta.validation.constraints.Email;
+import com.tourinvest.backend.validation.CorreoValido;
+import com.tourinvest.backend.validation.FormatoValido;
+import com.tourinvest.backend.validation.Patrones;
+
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Past;
@@ -16,20 +19,22 @@ import jakarta.validation.constraints.Size;
  *
  * <p>A diferencia de {@code ActualizarPerfilRequest}, aqui SI se puede elegir
  * el rol, porque el Administrador es quien asigna permisos. En edicion la
- * contrasena es opcional: si no viene, se conserva la existente.
+ * contrasena es opcional: si no viene, se conserva la existente.</p>
  */
 public class UsuarioAdminRequest {
 
     @NotBlank(message = "El nombre es obligatorio")
     @Size(max = 30, message = "El nombre no puede superar 30 caracteres")
+    @FormatoValido(regexp = Patrones.NOMBRE, message = Patrones.MSG_NOMBRE)
     private String nombre1;
 
     @NotBlank(message = "El apellido es obligatorio")
     @Size(max = 100, message = "El apellido no puede superar 100 caracteres")
+    @FormatoValido(regexp = Patrones.NOMBRE, message = Patrones.MSG_APELLIDO)
     private String apellido1;
 
     @NotBlank(message = "La cédula es obligatoria")
-    @Size(max = 20, message = "La cédula no puede superar 20 caracteres")
+    @FormatoValido(regexp = Patrones.CEDULA, message = Patrones.MSG_CEDULA)
     private String cedula;
 
     @NotNull(message = "La fecha de nacimiento es obligatoria")
@@ -37,12 +42,14 @@ public class UsuarioAdminRequest {
     private LocalDate fechaNacimiento;
 
     @NotBlank(message = "El correo es obligatorio")
-    @Email(message = "El correo no tiene un formato válido")
+    @CorreoValido
     private String correo;
 
     /**
      * Contrasena. Obligatoria al CREAR; opcional al EDITAR (si se deja vacia se
-     * mantiene la actual). Se valida en el servicio segun el caso de uso.
+     * mantiene la actual). Al no ser obligatoria aqui, NO puede llevar
+     * {@code @ContrasenaSegura}: esa politica se aplica en
+     * {@code AdministradorService} solo cuando la contrasena viene informada.
      */
     @Size(max = 72, message = "La contraseña no puede superar 72 caracteres")
     private String contrasena;

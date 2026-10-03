@@ -33,15 +33,19 @@ public class AuthController {
     @PostMapping("/registro")
     public ResponseEntity<?> registrar(@Valid @RequestBody RegistroRequest request) {
         if (!request.lasContrasenasCoinciden()) {
-            return ResponseEntity.badRequest().body("Las contraseñas no coinciden");
+            return ResponseEntity.badRequest().body(Map.of(
+                    "mensaje", "Las contraseñas no coinciden."));
         }
 
         Usuario nuevoUsuario = new Usuario();
-        nuevoUsuario.setNombre1(request.getNombre1());
-        nuevoUsuario.setApellido1(request.getApellido1());
-        nuevoUsuario.setCedula(request.getCedula());
+        // Se recortan los espacios de los extremos (los espacios EN MEDIO si son
+        // validos: "María José") y el correo se normaliza a minúsculas para que
+        // "Ana@Tourinvest.com" no se registre dos veces (caso PV-09).
+        nuevoUsuario.setNombre1(request.getNombre1().trim());
+        nuevoUsuario.setApellido1(request.getApellido1().trim());
+        nuevoUsuario.setCedula(request.getCedula().trim());
         nuevoUsuario.setFechaNacimiento(request.getFechaNacimiento());
-        nuevoUsuario.setCorreo(request.getCorreo());
+        nuevoUsuario.setCorreo(request.getCorreo().trim().toLowerCase());
         nuevoUsuario.setContrasena(request.getContrasena()); // se hashea dentro de AuthService.registrar
 
         // Registro público = siempre Inversionista. Admin/Analista se crean desde el panel de administrador.

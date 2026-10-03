@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "b7f1c2a4-5d6e-4f80-9a1b-2c3d4e5f6a7b",
     "name": "TourInvest Backend API",
-    "description": "Coleccion oficial de la API REST de TourInvest (Spring Boot :8080).\n\nORDEN DE PRUEBA: ejecuta primero la carpeta **0. Salud** y despues **1. Autenticacion**; los tres logins guardan su token automaticamente, asi que el resto de peticiones ya viajan con el encabezado `Authorization: Bearer`.\n\nPRERREQUISITOS\n- API levantada (setup run-backend) y base `tourinvest` sembrada (setup seed).\n- Selecciona el entorno **TourInvest Local**.\n- Usuarios semilla (clave `123456`), segun query.sql:\n    kike@tourinvest.com     Administrador\n    marlen@tourinvest.com   Analista\n    juan@tourinvest.com     Inversionista\n\nIMPORTANTE: la API usa SIEMPRE el campo `contrasena` (sin tilde) en login y registro. Enviando `password` la respuesta es 400.",
+    "description": "Coleccion oficial de la API REST de TourInvest (Spring Boot :8080).\n\nORDEN DE PRUEBA: ejecuta primero la carpeta **0. Salud** y despues **1. Autenticacion**; los tres logins guardan su token automaticamente, asi que el resto de peticiones ya viajan con el encabezado `Authorization: Bearer`.\n\nPRERREQUISITOS\n- API levantada (setup run-backend) y base `tourinvest` sembrada (setup seed).\n- Selecciona el entorno **TourInvest Local**.\n- Usuarios semilla (clave `123456`), segun query.sql:\n    kike@tourinvest.com     Administrador\n    marlen@tourinvest.com   Analista\n    juan@tourinvest.com     Inversionista\n\nPOLITICA DE CONTRASENA (registro, alta desde el panel y cambio de contrasena): minimo 12 caracteres con al menos 2 mayusculas, 2 minusculas, 2 numeros y 2 caracteres especiales (ej. `TourInvest2026*!`). El login NO exige complejidad, asi que los usuarios semilla con clave `123456` siguen entrando.\n\nIMPORTANTE: la API usa SIEMPRE el campo `contrasena` (sin tilde) en login y registro. Enviando `password` la respuesta es 400.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -206,7 +206,7 @@
                 ]
               }
             }
-          ]
+          ] 
         },
         {
           "name": "Login con clave incorrecta (401)",
@@ -259,7 +259,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"nombre1\": \"Ana\",\n  \"apellido1\": \"Restrepo\",\n  \"cedula\": \"1009876543\",\n  \"fechaNacimiento\": \"1997-04-12\",\n  \"correo\": \"ana.reposo@correo.com\",\n  \"contrasena\": \"123456\",\n  \"confirmarContrasena\": \"123456\"\n}"
+              "raw": "{\n  \"nombre1\": \"Ana\",\n  \"apellido1\": \"Restrepo\",\n  \"cedula\": \"1009876543\",\n  \"fechaNacimiento\": \"1997-04-12\",\n  \"correo\": \"ana.reposo@tourinvest.com\",\n  \"contrasena\": \"TourInvest2026*!\",\n  \"confirmarContrasena\": \"TourInvest2026*!\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/auth/registro",
@@ -1385,7 +1385,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"contrasenaActual\": \"esta-no-es-la-mia\",\n  \"contrasenaNueva\": \"nuevaClave123\"\n}"
+              "raw": "{\n  \"contrasenaActual\": \"esta-no-es-la-mia\",\n  \"contrasenaNueva\": \"TourInvest2026*!\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/perfil/contrasena",
@@ -1441,7 +1441,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"nombre1\": \"Ana\",\n  \"apellido1\": \"Restrepo\",\n  \"cedula\": \"1009876543\",\n  \"fechaNacimiento\": \"1997-04-12\",\n  \"correo\": \"ana.reposo@correo.com\",\n  \"contrasena\": \"123456\",\n  \"rol\": \"Analista\"\n}"
+              "raw": "{\n  \"nombre1\": \"Ana\",\n  \"apellido1\": \"Restrepo\",\n  \"cedula\": \"1009876543\",\n  \"fechaNacimiento\": \"1997-04-12\",\n  \"correo\": \"ana.reposo@correo.com\",\n  \"contrasena\": \"TourInvest2026*!\",\n  \"rol\": \"Analista\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/admin/usuarios",
@@ -1588,7 +1588,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"nombre1\": \"No\",\n  \"apellido1\": \"Permitido\",\n  \"cedula\": \"1020304050\",\n  \"fechaNacimiento\": \"1990-01-01\",\n  \"correo\": \"no.permitido@correo.com\",\n  \"contrasena\": \"123456\",\n  \"rol\": \"Administrador\"\n}"
+              "raw": "{\n  \"nombre1\": \"No\",\n  \"apellido1\": \"Permitido\",\n  \"cedula\": \"1020304050\",\n  \"fechaNacimiento\": \"1990-01-01\",\n  \"correo\": \"no.permitido@correo.com\",\n  \"contrasena\": \"TourInvest2026*!\",\n  \"rol\": \"Administrador\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/admin/usuarios",

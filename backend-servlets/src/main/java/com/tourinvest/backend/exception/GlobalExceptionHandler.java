@@ -2,6 +2,7 @@ package com.tourinvest.backend.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -10,6 +11,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
@@ -39,16 +41,32 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> handleValidation(MethodArgumentNotValidException ex) {
-        Map<String, String> errores = new HashMap<>();
+        // Un mismo campo puede acumular varias violaciones (p. ej. "123456"
+        // incumple longitud, mayusculas, numeros y especiales). Se concatenan
+        // en un solo mensaje para que el frontend pueda pintarlo tal cual bajo
+        // el input, en vez de perder silenciosamente todas menos la ultima.
+        Map<String, String> errores = new LinkedHashMap<>();
         ex.getBindingResult().getFieldErrors().forEach(err ->
-                errores.put(err.getField(), err.getDefaultMessage()));
+                errores.merge(err.getField(), err.getDefaultMessage(),
+                        (anterior, nuevo) -> anterior + " " + nuevo));
 
-        Map<String, Object> body = new HashMap<>();
+        Map<String, Object> body = new LinkedHashMap<>();
         body.put("timestamp", LocalDateTime.now());
         body.put("status", HttpStatus.BAD_REQUEST.value());
         body.put("errores", errores);
 
         return ResponseEntity.badRequest().body(body);
+    }
+
+    // JSON ilegible o con un tipo/fecha que no se puede convertir
+    // (p. ej. "fechaNacimiento": "1999-13-45" o "20/03/1999"). Sin este
+    // bloque Spring responderia con su cuerpo de error por defecto, que el
+    // frontend no entiende al no traer el campo "mensaje".
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<Map<String, Object>> handleBodyIlegible(HttpMessageNotReadableException ex) {
+        return construirRespuesta(HttpStatus.BAD_REQUEST,
+                "Los datos enviados no son válidos. Revisa el formato de los campos "
+                        + "(por ejemplo, la fecha debe ser AAAA-MM-DD).");
     }
 
     // 403 - autenticado pero sin permisos para el recurso (p. ej. un Analista

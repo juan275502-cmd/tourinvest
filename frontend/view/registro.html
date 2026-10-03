@@ -19,20 +19,28 @@
       <div id="mensaje-global" class="mensaje-global"></div>
 
       <!-- Registrar usuario (rol público → siempre Inversionista) -->
+      <!-- Los atributos HTML (required, pattern, minlength, maxlength) impiden
+           el envío nativo rápido; auth.js añade los mensajes explicitos por
+           campo que exige el protocolo de pruebas. -->
       <form id="registroForm" onsubmit="return registrarUsuario(event)">
         <div class="field">
           <label for="nombre1">Nombre</label>
-          <input type="text" id="nombre1" name="nombre1" required>
+          <input type="text" id="nombre1" name="nombre1" maxlength="30" required
+                 pattern="[ ]*[A-Za-zÁÉÍÓÚÜÖÑáéíóúüöñ]+([ '\-]+[A-Za-zÁÉÍÓÚÜÖÑáéíóúüöñ]+)*[ ]*"
+                 title="Solo letras, espacios, guiones y apóstrofos (ej. María José)">
           <div class="field__mensaje-error"></div>
         </div>
         <div class="field">
           <label for="apellido1">Apellido</label>
-          <input type="text" id="apellido1" name="apellido1" required>
+          <input type="text" id="apellido1" name="apellido1" maxlength="100" required
+                 pattern="[ ]*[A-Za-zÁÉÍÓÚÜÖÑáéíóúüöñ]+([ '\-]+[A-Za-zÁÉÍÓÚÜÖÑáéíóúüöñ]+)*[ ]*"
+                 title="Solo letras, espacios, guiones y apóstrofos (ej. Pérez Gómez)">
           <div class="field__mensaje-error"></div>
         </div>
         <div class="field">
           <label for="cedula">Cédula</label>
-          <input type="text" id="cedula" name="cedula" required>
+          <input type="text" id="cedula" name="cedula" inputmode="numeric" maxlength="20"
+                 pattern="[0-9]{6,20}" required title="Entre 6 y 20 dígitos numéricos">
           <div class="field__mensaje-error"></div>
         </div>
         <div class="field">
@@ -42,17 +50,28 @@
         </div>
         <div class="field">
           <label for="correo">Correo</label>
-          <input type="email" id="correo" name="correo" required>
+          <input type="email" id="correo" name="correo" maxlength="120" required
+                 placeholder="usuario@dominio.com">
           <div class="field__mensaje-error"></div>
         </div>
         <div class="field">
           <label for="contrasena">Contraseña</label>
-          <input type="password" id="contrasena" name="contrasena" minlength="6" required>
+          <input type="password" id="contrasena" name="contrasena" minlength="12" maxlength="72"
+                 autocomplete="new-password" aria-describedby="reglas-contrasena" required>
+          <!-- Checklist de la política: auth.js marca cada regla mientras se escribe -->
+          <ul id="reglas-contrasena" class="reglas-contrasena" aria-live="polite">
+            <li data-regla="longitud">Mínimo 12 caracteres</li>
+            <li data-regla="mayusculas">Al menos 2 letras mayúsculas</li>
+            <li data-regla="minusculas">Al menos 2 letras minúsculas</li>
+            <li data-regla="numeros">Al menos 2 números</li>
+            <li data-regla="especiales">Al menos 2 caracteres especiales (!@#$%&amp;*)</li>
+          </ul>
           <div class="field__mensaje-error"></div>
         </div>
         <div class="field">
           <label for="confirmarContrasena">Confirmar contraseña</label>
-          <input type="password" id="confirmarContrasena" name="confirmarContrasena" minlength="6" required>
+          <input type="password" id="confirmarContrasena" name="confirmarContrasena"
+                 minlength="12" maxlength="72" autocomplete="new-password" required>
           <div class="field__mensaje-error"></div>
         </div>
         <button type="submit" class="btn-primary">Registrarme</button>

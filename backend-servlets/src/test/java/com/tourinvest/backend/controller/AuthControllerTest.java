@@ -91,6 +91,9 @@ class AuthControllerTest {
     }
 
     // ---------- REGISTRO ----------
+    // Contraseña válida para la política: 15 caracteres con 2 mayúsculas,
+    // 2 minúsculas, 4 números y 2 caracteres especiales.
+    private static final String CLAVE_VALIDA = "TourInvest2026*!";
 
     @Test
     @DisplayName("POST /auth/registro: con datos válidos responde 201")
@@ -109,8 +112,8 @@ class AuthControllerTest {
                                 "cedula", "1112223334",
                                 "fechaNacimiento", LocalDate.of(1999, 3, 20).toString(),
                                 "correo", "kike@tourinvest.com",
-                                "contrasena", "123456",
-                                "confirmarContrasena", "123456"))))
+                                "contrasena", CLAVE_VALIDA,
+                                "confirmarContrasena", CLAVE_VALIDA))))
                 .andExpect(status().isCreated());
     }
 
@@ -125,10 +128,12 @@ class AuthControllerTest {
                                 "cedula", "1112223334",
                                 "fechaNacimiento", LocalDate.of(1999, 3, 20).toString(),
                                 "correo", "kike@tourinvest.com",
-                                "contrasena", "123456",
-                                "confirmarContrasena", "otraClave"))))
+                                "contrasena", CLAVE_VALIDA,
+                                "confirmarContrasena", "OtraClave2026*!"))))
                 .andExpect(status().isBadRequest())
-                .andExpect(content().string("Las contraseñas no coinciden"));
+                .andExpect(jsonPath("$.mensaje").value("Las contraseñas no coinciden."));
+
+        verify(authService, never()).registrar(any(), any());
     }
 
     @Test
@@ -138,8 +143,8 @@ class AuthControllerTest {
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(Map.of(
                                 "correo", "kike@tourinvest.com",
-                                "contrasena", "123456",
-                                "confirmarContrasena", "123456"))))
+                                "contrasena", CLAVE_VALIDA,
+                                "confirmarContrasena", CLAVE_VALIDA))))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.errores.nombre1").exists())
                 .andExpect(jsonPath("$.errores.cedula").exists());

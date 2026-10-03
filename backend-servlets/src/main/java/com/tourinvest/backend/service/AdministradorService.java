@@ -6,6 +6,7 @@ import com.tourinvest.backend.model.Rol;
 import com.tourinvest.backend.model.Usuario;
 import com.tourinvest.backend.repository.RolRepository;
 import com.tourinvest.backend.repository.UsuarioRepository;
+import com.tourinvest.backend.validation.PasswordPolicy;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -66,9 +67,7 @@ public class AdministradorService {
         if (request.getContrasena() == null || request.getContrasena().isBlank()) {
             throw new IllegalArgumentException("La contraseña es obligatoria al crear un usuario");
         }
-        if (request.getContrasena().length() < 6) {
-            throw new IllegalArgumentException("La contraseña debe tener al menos 6 caracteres");
-        }
+        exigirContrasenaSegura(request.getContrasena());
 
         Rol rol = rolRepository.findByNombre(request.getRol())
                 .orElseThrow(() -> new IllegalStateException("El rol seleccionado no existe"));
@@ -126,13 +125,25 @@ public class AdministradorService {
         }
 
         if (request.getContrasena() != null && !request.getContrasena().isBlank()) {
-            if (request.getContrasena().length() < 6) {
-                throw new IllegalArgumentException("La contraseña debe tener al menos 6 caracteres");
-            }
+            exigirContrasenaSegura(request.getContrasena());
             usuario.setContrasena(passwordEncoder.encode(request.getContrasena()));
         }
 
         return mapearADTO(usuarioRepository.save(usuario));
+    }
+
+    /**
+     * Aplica la misma politica de contrasena del registro publico
+     * ({@link PasswordPolicy}) a las contrasenas que fija el administrador.
+     * Se valida aqui, y no con {@code @ContrasenaSegura} en el DTO, porque al
+     * EDITAR la contrasena es opcional: si viene vacia debe conservarse la
+     * anterior sin exigir la politica.
+     */
+    private void exigirContrasenaSegura(String contrasena) {
+        String mensaje = PasswordPolicy.mensajeError(contrasena);
+        if (mensaje != null) {
+            throw new IllegalArgumentException(mensaje);
+        }
     }
 
     /**

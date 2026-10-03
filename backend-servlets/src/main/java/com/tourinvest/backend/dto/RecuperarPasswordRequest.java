@@ -1,12 +1,13 @@
 package com.tourinvest.backend.dto;
 
-import jakarta.validation.constraints.Email;
+import com.tourinvest.backend.validation.CorreoValido;
 import jakarta.validation.constraints.NotBlank;
 
+/** Recuperacion de contrasena: solo se valida el formato del correo. */
 public class RecuperarPasswordRequest {
 
     @NotBlank(message = "El correo es obligatorio")
-    @Email(message = "El correo no tiene un formato válido")
+    @CorreoValido
     private String correo;
 
     public String getCorreo() {

@@ -1,25 +1,37 @@
 package com.tourinvest.backend.dto;
 
-import java.time.LocalDate;
-
-import jakarta.validation.constraints.Email;
+import com.tourinvest.backend.validation.ContrasenaSegura;
+import com.tourinvest.backend.validation.CorreoValido;
+import com.tourinvest.backend.validation.FormatoValido;
+import com.tourinvest.backend.validation.Patrones;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Past;
 import jakarta.validation.constraints.Size;
 
+import java.time.LocalDate;
+
+/**
+ * Alta de usuario desde el registro publico ({@code POST /auth/registro}).
+ *
+ * <p>Cada campo declara su propia regla; los mensajes van en español porque se
+ * muestran tal cual en la interfaz (ver los casos PV-01 a PV-17 del protocolo de
+ * pruebas).</p>
+ */
 public class RegistroRequest {
 
     @NotBlank(message = "El nombre es obligatorio")
-    @Size(max = 30)
+    @Size(max = 30, message = "El nombre no puede superar 30 caracteres")
+    @FormatoValido(regexp = Patrones.NOMBRE, message = Patrones.MSG_NOMBRE)
     private String nombre1;
 
     @NotBlank(message = "El apellido es obligatorio")
-    @Size(max = 100)
+    @Size(max = 100, message = "El apellido no puede superar 100 caracteres")
+    @FormatoValido(regexp = Patrones.NOMBRE, message = Patrones.MSG_APELLIDO)
     private String apellido1;
 
     @NotBlank(message = "La cédula es obligatoria")
-    @Size(max = 20)
+    @FormatoValido(regexp = Patrones.CEDULA, message = Patrones.MSG_CEDULA)
     private String cedula;
 
     @NotNull(message = "La fecha de nacimiento es obligatoria")
@@ -27,14 +39,21 @@ public class RegistroRequest {
     private LocalDate fechaNacimiento;
 
     @NotBlank(message = "El correo es obligatorio")
-    @Email(message = "El correo no tiene un formato válido")
+    @CorreoValido
     private String correo;
 
+    /**
+     * Politica de seguridad: minimo 12 caracteres con al menos 2 mayusculas,
+     * 2 minusculas, 2 numeros y 2 caracteres especiales. El maximo de 72 es el
+     * limite de BCrypt (a partir de ahi se trunca en silencio).
+     */
     @NotBlank(message = "La contraseña es obligatoria")
-    @Size(min = 6, message = "La contraseña debe tener al menos 6 caracteres")
+    @ContrasenaSegura
+    @Size(max = 72, message = "La contraseña no puede superar 72 caracteres")
     private String contrasena;
 
     @NotBlank(message = "Debes confirmar la contraseña")
+    @Size(max = 72, message = "La contraseña no puede superar 72 caracteres")
     private String confirmarContrasena;
 
     public boolean lasContrasenasCoinciden() {

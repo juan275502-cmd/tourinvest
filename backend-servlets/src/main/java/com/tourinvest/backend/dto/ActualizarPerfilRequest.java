@@ -1,6 +1,8 @@
 package com.tourinvest.backend.dto;
 
-import jakarta.validation.constraints.Email;
+import com.tourinvest.backend.validation.CorreoValido;
+import com.tourinvest.backend.validation.FormatoValido;
+import com.tourinvest.backend.validation.Patrones;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Past;
@@ -25,14 +27,16 @@ public class ActualizarPerfilRequest {
 
     @NotBlank(message = "El nombre es obligatorio")
     @Size(max = 30, message = "El nombre no puede superar 30 caracteres")
+    @FormatoValido(regexp = Patrones.NOMBRE, message = Patrones.MSG_NOMBRE)
     private String nombre1;
 
     @NotBlank(message = "El apellido es obligatorio")
     @Size(max = 100, message = "El apellido no puede superar 100 caracteres")
+    @FormatoValido(regexp = Patrones.NOMBRE, message = Patrones.MSG_APELLIDO)
     private String apellido1;
 
     @NotBlank(message = "La cédula es obligatoria")
-    @Size(max = 20, message = "La cédula no puede superar 20 caracteres")
+    @FormatoValido(regexp = Patrones.CEDULA, message = Patrones.MSG_CEDULA)
     private String cedula;
 
     @NotNull(message = "La fecha de nacimiento es obligatoria")
@@ -45,7 +49,7 @@ public class ActualizarPerfilRequest {
      * cambio deja de ser valido (el backend lo resuelve por correo).
      */
     @NotBlank(message = "El correo es obligatorio")
-    @Email(message = "El correo no tiene un formato válido")
+    @CorreoValido
     private String correo;
 
     public String getNombre1() {
