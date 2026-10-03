@@ -201,6 +201,30 @@ class TestPoliticaContrasenaEnElFormulario(unittest.TestCase):
         self.assertIn("if (validarFormularioRegistro(formulario)) {", js,
                       "registrarUsuario debe cortar el envio si la validacion falla")
 
+    def test_registro_avisa_de_la_edad_minima(self):
+        src = leer(self.REGISTRO)
+        self.assertIn("field__ayuda", src, "debe explicar el requisito de mayoria de edad")
+        self.assertIn("18", src)
+
+    def test_auth_js_limita_el_selector_de_fecha(self):
+        """auth.js acota el calendario: min = hoy - 18 años, max = ayer."""
+        js = leer(os.path.join(JS_DIR, "auth.js"))
+        self.assertIn("const EDAD_MINIMA = 18;", js)
+        self.assertIn("function activarLimitesFecha(", js)
+        self.assertIn("campo.max = aIsoFecha(max)", js)
+        self.assertIn("campo.min = aIsoFecha(min)", js)
+        self.assertIn("activarLimitesFecha();", js,
+                      "debe ejecutarse en el arranque de la pagina")
+
+    def test_la_edad_minima_coincide_con_el_backend(self):
+        js = leer(os.path.join(JS_DIR, "auth.js"))
+        java = leer(os.path.join(BACKEND, "validation", "MayorDeEdad.java"))
+        dto = leer(os.path.join(BACKEND, "dto", "RegistroRequest.java"))
+
+        self.assertIn("const EDAD_MINIMA = 18;", js)
+        self.assertIn("int minima() default 18;", java)
+        self.assertIn("@MayorDeEdad(minima = 18", dto)
+
 
 if __name__ == "__main__":
     unittest.main()

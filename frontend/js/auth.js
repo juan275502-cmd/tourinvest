@@ -248,9 +248,18 @@ function validarCorreo(valor) {
 }
 
 /**
+ * Edad mínima para registrarse: mayoría de edad (art. 234 del Código Civil de
+ * Colombia). Debe coincidir con MayorDeEdad.minima en el backend.
+ */
+const EDAD_MINIMA = 18;
+
+/**
  * Fecha: formato AAAA-MM-DD (PV-16), fecha real del calendario y anterior a hoy
- * (PV-17). El campo date del navegador ya impide teclear otro formato, pero la
- * validación se mantiene aquí y en el backend porque la API es pública.
+ * (PV-17), y de una persona mayor de edad.
+ *
+ * El campo date del navegador ya impide teclear otro formato y `activarLimitesFecha`
+ * acota el selector, pero la validación se mantiene aquí y en el backend porque
+ * la API es pública.
  */
 function validarFecha(valor) {
   const texto = (valor || "").trim();
@@ -274,13 +283,68 @@ function validarFecha(valor) {
   ) {
     return { valida: false, mensaje: "La fecha no existe en el calendario." };
   }
-  if (fecha.getTime() >= Date.now()) {
+
+  // Comparación por DÍA, no por instante: el @Past del backend rechaza también
+  // la fecha de hoy, y aquí debe pasar lo mismo (si no, "hoy" se reportaría
+  // como "menor de edad" en vez de "debe ser anterior a hoy").
+  const ahora = new Date();
+  const inicioDeHoy = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate());
+  if (fecha.getTime() >= inicioDeHoy.getTime()) {
     return {
       valida: false,
       mensaje: "La fecha de nacimiento debe ser anterior a hoy.",
     };
   }
+
+  const anios = edadCumplidos(fecha);
+  if (anios < EDAD_MINIMA) {
+    return {
+      valida: false,
+      mensaje: `Debes ser mayor de edad para registrarte (mínimo ${EDAD_MINIMA} años).`,
+    };
+  }
+
   return { valida: true, mensaje: "" };
+}
+
+/** Años cumplidos de una fecha hasta hoy (quien cumple 18 mañana tiene 17). */
+function edadCumplidos(fecha, hoy = new Date()) {
+  let anios = hoy.getFullYear() - fecha.getFullYear();
+  const mes = hoy.getMonth() - fecha.getMonth();
+  if (mes < 0 || (mes === 0 && hoy.getDate() < fecha.getDate())) {
+    anios--;
+  }
+  return anios;
+}
+
+/** Fecha en formato AAAA-MM-DD a partir de un Date (hora local, sin UTC). */
+function aIsoFecha(fecha) {
+  const mes = String(fecha.getMonth() + 1).padStart(2, "0");
+  const dia = String(fecha.getDate()).padStart(2, "0");
+  return `${fecha.getFullYear()}-${mes}-${dia}`;
+}
+
+/**
+ * Acota el selector de fecha de nacimiento: no deja elegir mañana ni más
+ * adelante (max = ayer) ni fechas de menores de edad (min = hoy - 18 años).
+ * El usuario ve de antemano qué fechas son válidas en lugar de escribir y
+ * recibir un error al enviar.
+ */
+function activarLimitesFecha() {
+  const campos = document.querySelectorAll('input[type="date"][name="fechaNacimiento"]');
+  if (!campos.length) return;
+
+  const hoy = new Date();
+  const max = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() - 1);
+  const min = new Date(hoy.getFullYear() - EDAD_MINIMA, hoy.getMonth(), hoy.getDate());
+
+  campos.forEach((campo) => {
+    campo.max = aIsoFecha(max);
+    campo.min = aIsoFecha(min);
+    if (!campo.title) {
+      campo.title = `Debes ser mayor de edad (mínimo ${EDAD_MINIMA} años).`;
+    }
+  });
 }
 
 /**
@@ -403,7 +467,10 @@ function activarAyudaContrasena() {
 
 // El script se carga con defer, así que el DOM ya está listo al ejecutarlo.
 if (typeof document !== "undefined" && document.addEventListener) {
-  document.addEventListener("DOMContentLoaded", activarAyudaContrasena);
+  document.addEventListener("DOMContentLoaded", () => {
+    activarAyudaContrasena();
+    activarLimitesFecha();
+  });
 }
 
 // Se expone el módulo de validación en window (igual que js/graficas.js expone
@@ -412,6 +479,7 @@ if (typeof document !== "undefined" && document.addEventListener) {
 if (typeof window !== "undefined") {
   window.TourInvestAuth = {
     REGLAS_CONTRASENA,
+    EDAD_MINIMA,
     contarCaracteres,
     requisitosContrasena,
     actualizarReglasContrasena,
@@ -420,6 +488,9 @@ if (typeof window !== "undefined") {
     validarCedula,
     validarCorreo,
     validarFecha,
+    edadCumplidos,
+    aIsoFecha,
+    activarLimitesFecha,
     validarFormularioRegistro,
     validarFormularioAcceso,
   };

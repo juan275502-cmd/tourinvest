@@ -27,6 +27,21 @@ administrador y cambio de contraseña del perfil. **No** se exige en el login
 
 Detalle completo en `README.md` → *Validación de datos*.
 
+## 1.b Regla de la fecha de nacimiento
+
+| Regla | Valor |
+|---|---|
+| Formato | `AAAA-MM-DD` |
+| Debe existir en el calendario | Sí (30 de febrero se rechaza) |
+| Puede ser hoy o futura | No, debe ser **anterior a hoy** |
+| Edad mínima | **18 años (mayoría de edad, art. 234 del Código Civil)** |
+
+Casos límite verificados: quien cumple 18 **hoy** se acepta; quien cumple 18
+**mañana** se rechaza (todavía tiene 17 años cumplidos). El selector de fecha
+queda acotado automáticamente entre `hoy − 18 años` y ayer.
+
+Detalle completo en `README.md` → *Validación de datos*.
+
 ---
 
 ## 2. Casos de validación (PV-01 a PV-17)
@@ -49,7 +64,7 @@ Detalle completo en `README.md` → *Validación de datos*.
 | PV-14 | Introducir letras en un campo exclusivamente numérico | Rechazar o impedir el dato según la regla implementada | **Cumple.** La cédula solo admite 6–20 dígitos: `1009a876543` se rechaza en el navegador (`pattern` + teclado numérico) y en la API | `pv14_cedulaConLetras_...` · `validarCedula` |
 | PV-15 | Introducir un valor negativo en un campo que solo admite positivos | Rechazar si la regla del negocio no permite valores negativos | **No aplica** en registro/login: no hay campos numéricos con signo en estos formularios (la cédula es un identificador de 6–20 dígitos, sin rango de negocio). Los campos numéricos del sistema (cantidad de inversión, activos y pasivos) usan `min` en el HTML y se validan en los DTO de sus endpoints | — |
 | PV-16 | Ingresar una fecha con formato incorrecto | Mostrar una validación si el campo controla el formato | **Cumple.** El campo `date` solo admite `AAAA-MM-DD`; si la API recibe `20/03/1999` responde 400 con *"Los datos enviados no son válidos. Revisa el formato de los campos…"* | `pv16_fechaConFormatoInvalido_...` |
-| PV-17 | Ingresar una fecha inexistente o fuera del rango permitido | Rechazar si se implementó esa regla | **Cumple.** `2023-02-30` (30 de febrero) y las fechas futuras como `2999-01-01` se rechazan con 400 | `pv17_fechaInexistente_...` · `pv17_fechaFutura_...` |
+| PV-17 | Ingresar una fecha inexistente o fuera del rango permitido | Rechazar si se implementó esa regla | **Cumple.** `2023-02-30` (30 de febrero) y las fechas futuras como `2999-01-01` se rechazan con 400. Además se exige **mayoría de edad (18 años)**: quien cumple 18 mañana se rechaza, quien cumple 18 hoy se acepta | `pv17_fechaInexistente_...` · `pv17_fechaFutura_...` · `edad_menorDeDieciseis_...` · `edad_cumpleDiecisechoHoy_...` |
 
 ---
 
@@ -83,10 +98,12 @@ Detalle completo en `README.md` → *Validación de datos*.
 | INC-09 | Los formularios de login y recuperación no tenían dónde mostrar el error por campo | Se añadió el contenedor `.field__mensaje-error` en `login.html` y `recuperar.html` | **CORREGIDA** |
 | INC-10 | Los paneles no avisan de la política antes de enviar (el error llega del servidor tras un viaje de ida y vuelta) | `minlength="12" maxlength="72"` en los campos de contraseña de los tres dashboards. La validación completa en cliente de esos formularios queda como mejora propuesta: reutilizar `TourInvestAuth.validarContrasena` desde `perfil.js` y `usuarios.js` | **PENDIENTE** (no bloqueante) |
 | INC-11 | El envío del correo de recuperación no existe (PF-06) | Requiere configurar un servidor SMTP y un token de un solo uso. La API ya responde el mensaje genérico correcto | **PENDIENTE** |
+| INC-12 | La fecha de nacimiento solo se comprobaba como "anterior a hoy": una persona de 10 años podía registrarse | Se creó la restricción `@MayorDeEdad(minima = 18)` (art. 234 del Código Civil) aplicada al registro, al perfil y al alta de usuarios del panel. `auth.js` replica el cálculo con `EDAD_MINIMA` y acota el calendario (`min` = hoy − 18 años, `max` = ayer) | **CORREGIDA** |
+| INC-13 | El frontend y el backend discrepaban con la fecha de hoy: el backend la rechazaba con "debe ser anterior a hoy" y el JS con "debe ser mayor de edad" | `validarFecha` compara por día (no por instante) y aplica el mismo orden de reglas que el backend: calendario → anterior a hoy → edad | **CORREGIDA** |
 
 > Durante la ejecución de las pruebas automatizadas **no se identificaron
 > errores en los casos evaluados**: las cuatro suites quedan en verde
-> (143 pruebas JUnit · 16 pruebas Python · `auth_validation_test.js` en Node).
+> (157 pruebas JUnit · 19 pruebas Python · `auth_validation_test.js` en Node).
 
 ---
 

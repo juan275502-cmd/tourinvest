@@ -45,7 +45,9 @@
         </div>
         <div class="field">
           <label for="fechaNacimiento">Fecha de nacimiento</label>
+          <!-- auth.js acota el selector (min = hoy - 18 años, max = ayer) -->
           <input type="date" id="fechaNacimiento" name="fechaNacimiento" required>
+          <p class="field__ayuda">Debes ser mayor de edad (mínimo 18 años).</p>
           <div class="field__mensaje-error"></div>
         </div>
         <div class="field">

@@ -17,6 +17,7 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 
+import java.time.LocalDate;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -383,6 +384,55 @@ class AuthControllerValidacionTest {
     void pv17_fechaFutura_seRechaza() throws Exception {
         Map<String, String> cuerpo = registroValido();
         cuerpo.put("fechaNacimiento", "2999-01-01");
+
+        registrar(cuerpo)
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errores.fechaNacimiento")
+                        .value("La fecha de nacimiento debe ser anterior a hoy"));
+    }
+
+    // ---------- Mayor de edad (18 años) ----------
+
+    @Test
+    @DisplayName("Edad: un menor de 17 años se rechaza indicando que debe ser mayor de edad")
+    void edad_menorDeDieciseis_seRechaza() throws Exception {
+        Map<String, String> cuerpo = registroValido();
+        cuerpo.put("fechaNacimiento", LocalDate.now().minusYears(17).toString());
+
+        registrar(cuerpo)
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errores.fechaNacimiento")
+                        .value("Debes ser mayor de edad para registrarte (mínimo 18 años)"));
+
+        verify(authService, never()).registrar(any(), any());
+    }
+
+    @Test
+    @DisplayName("Edad: quien cumple 18 años mañana todavía se rechaza")
+    void edad_cumpleDiecisechoMañana_seRechaza() throws Exception {
+        Map<String, String> cuerpo = registroValido();
+        cuerpo.put("fechaNacimiento", LocalDate.now().minusYears(18).plusDays(1).toString());
+
+        registrar(cuerpo)
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errores.fechaNacimiento").exists());
+    }
+
+    @Test
+    @DisplayName("Edad: quien cumple 18 años hoy ya puede registrarse")
+    void edad_cumpleDiecisechoHoy_seAcepta() throws Exception {
+        Map<String, String> cuerpo = registroValido();
+        cuerpo.put("fechaNacimiento", LocalDate.now().minusYears(18).toString());
+        stubRegistroExitoso();
+
+        registrar(cuerpo).andExpect(status().isCreated());
+    }
+
+    @Test
+    @DisplayName("Edad: la fecha de hoy se rechaza por el @Past, no por la edad (un solo mensaje)")
+    void edad_fechaDeHoy_mensajeDePast() throws Exception {
+        Map<String, String> cuerpo = registroValido();
+        cuerpo.put("fechaNacimiento", LocalDate.now().toString());
 
         registrar(cuerpo)
                 .andExpect(status().isBadRequest())

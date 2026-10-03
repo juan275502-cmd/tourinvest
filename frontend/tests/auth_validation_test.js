@@ -82,6 +82,10 @@ const validarCorreo = ctx.validarCorreo;
 const validarNombre = ctx.validarNombre;
 const validarCedula = ctx.validarCedula;
 const validarFecha = ctx.validarFecha;
+const edadCumplidos = ctx.edadCumplidos;
+const aIsoFecha = ctx.aIsoFecha;
+const activarLimitesFecha = ctx.activarLimitesFecha;
+const EDAD_MINIMA = ctx.TourInvestAuth.EDAD_MINIMA;
 const contarCaracteres = ctx.contarCaracteres;
 
 const requisitosContrasena = ctx.requisitosContrasena;
@@ -213,6 +217,80 @@ assert.ok(!validarFecha("1999-13-01").valida, "PV-17: mes inexistente");
 assert.ok(!validarFecha("2023-02-30").valida, "PV-17: el 30 de febrero no existe");
 assert.ok(!validarFecha("2999-01-01").valida, "PV-17: fecha futura");
 assert.strictEqual(validarFecha("").mensaje, "La fecha de nacimiento es obligatoria.");
+
+// --- Mayor de edad (18 años) ---------------------------------------------------
+console.log("Mayor de edad  fecha de nacimiento");
+const HOY = new Date();
+function iso(desplazAnios, offsetDias = 0) {
+  const f = new Date(
+    HOY.getFullYear() - desplazAnios,
+    HOY.getMonth(),
+    HOY.getDate() + offsetDias
+  );
+  return `${f.getFullYear()}-${String(f.getMonth() + 1).padStart(2, "0")}-${String(
+    f.getDate()
+  ).padStart(2, "0")}`;
+}
+
+assert.strictEqual(EDAD_MINIMA, 18, "la edad mínima por defecto es 18");
+
+// cumple 18 hoy mismo -> se acepta (ya es mayor de edad hoy).
+assert.ok(validarFecha(iso(18)).valida, "quien cumple 18 hoy puede registrarse");
+
+// cumple 18 AYER -> 18 años cumplidos, también se acepta.
+assert.ok(validarFecha(iso(18, -1)).valida, "con 18 años ya cumplidos puede registrarse");
+
+// cumple 18 MAÑANA -> sigue teniendo 17, se rechaza.
+const aunMenor = validarFecha(iso(18, 1));
+assert.ok(!aunMenor.valida, "quien cumple 18 mañana todavía no puede");
+assert.match(aunMenor.mensaje, /mayor de edad/);
+
+// Menor de edad claro.
+const menor = validarFecha(iso(10));
+assert.ok(!menor.valida, "un menor de 10 años se rechaza");
+assert.strictEqual(
+  menor.mensaje,
+  "Debes ser mayor de edad para registrarte (mínimo 18 años)."
+);
+
+// Un recién nacido.
+assert.ok(!validarFecha(iso(0)).valida, "un recién nacido se rechaza");
+
+// Hoy y mañana los rechaza @Past, con su propio mensaje (no el de la edad).
+const hoy = validarFecha(aIsoFecha(HOY));
+assert.ok(!hoy.valida);
+assert.match(hoy.mensaje, /anterior a hoy/, "el mensaje de 'hoy' es el de @Past");
+
+// edadCumplidos cuenta años CUMPLIDOS (quien cumple 18 mañana tiene 17).
+// Se le pasa HOY como referencia para que el resultado no dependa del reloj.
+const cumple18Hoy = new Date(HOY.getFullYear() - 18, HOY.getMonth(), HOY.getDate());
+const cumple18Mañana = new Date(HOY.getFullYear() - 18, HOY.getMonth(), HOY.getDate() + 1);
+assert.strictEqual(edadCumplidos(cumple18Hoy, HOY), 18, "cumple 18 hoy");
+assert.strictEqual(edadCumplidos(cumple18Mañana, HOY), 17, "cumple 18 mañana");
+assert.strictEqual(
+  edadCumplidos(new Date(HOY.getFullYear() - 26, HOY.getMonth(), HOY.getDate()), HOY),
+  26,
+  "26 años justos"
+);
+
+// activarLimitesFecha acota el selector: min = hoy - 18, max = ayer.
+const campos = [{ name: "fechaNacimiento", title: "" }];
+activarLimitesFechaCon(campos);
+assert.strictEqual(campos[0].max, iso(0, -1), "max = ayer");
+assert.strictEqual(campos[0].min, iso(18), "min = hoy - 18 años");
+assert.match(campos[0].title, /mayor de edad/);
+
+function activarLimitesFechaCon(lista) {
+  // El código se ejecuta dentro del contexto vm, así que hay que sustituir
+  // document en ESE contexto (aquí no existe una variable global `document`).
+  const original = ctx.document.querySelectorAll;
+  ctx.document.querySelectorAll = () => lista;
+  try {
+    activarLimitesFecha();
+  } finally {
+    ctx.document.querySelectorAll = original;
+  }
+}
 assert.match(validarCorreo("vale.lor").mensaje, /@/, "el mensaje pide el @");
 assert.strictEqual(validarCorreo("   ").mensaje, "El correo es obligatorio.", "PV-02");
 assert.ok(validarCorreo("nombre.apellido+tag@sub.dominio.co").valida);

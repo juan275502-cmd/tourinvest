@@ -7,6 +7,7 @@ import com.tourinvest.backend.model.Usuario;
 
 import com.tourinvest.backend.validation.CorreoValido;
 import com.tourinvest.backend.validation.FormatoValido;
+import com.tourinvest.backend.validation.MayorDeEdad;
 import com.tourinvest.backend.validation.Patrones;
 
 import jakarta.validation.constraints.NotBlank;
@@ -37,8 +38,14 @@ public class UsuarioAdminRequest {
     @FormatoValido(regexp = Patrones.CEDULA, message = Patrones.MSG_CEDULA)
     private String cedula;
 
+    /**
+     * Reglas de la fecha de nacimiento (casos PV-16 y PV-17):
+     * obligatorio, real en el calendario (lo garantiza el formato AAAA-MM-DD),
+     * anterior a hoy y de una persona MAYOR DE EDAD.
+     */
     @NotNull(message = "La fecha de nacimiento es obligatoria")
     @Past(message = "La fecha de nacimiento debe ser anterior a hoy")
+    @MayorDeEdad(minima = 18, message = "Debes ser mayor de edad para registrarte (mínimo 18 años)")
     private LocalDate fechaNacimiento;
 
     @NotBlank(message = "El correo es obligatorio")

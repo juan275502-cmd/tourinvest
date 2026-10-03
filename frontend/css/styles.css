@@ -1036,6 +1036,13 @@ th {
   min-height: 14px;
 }
 
+/* ---------- Pista de ayuda bajo un campo (registro.html) ---------- */
+.field__ayuda {
+  color: var(--texto-secundario);
+  font-size: 12px;
+  margin: 4px 0 0;
+}
+
 /* ---------- Checklist de reglas de contraseña (registro.html + auth.js) ----------
    Cada <li data-regla="..."> pasa a .regla-ok cuando la regla se cumple. */
 .reglas-contrasena {

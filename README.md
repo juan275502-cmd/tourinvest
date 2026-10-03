@@ -146,14 +146,18 @@ mayúsculas; al menos 2 números."*
   por espacios, guiones o apóstrofos. Se acepta `María José`; se rechaza
   `Juan123` o `Juan@`. Tope de 30 y 100 caracteres.
 - **Cédula:** solo dígitos, entre 6 y 20.
-- **Fecha de nacimiento:** obligatoria, con formato `AAAA-MM-DD` y anterior a hoy.
+- **Fecha de nacimiento:** obligatoria, con formato `AAAA-MM-DD`, que exista en
+  el calendario, **anterior a hoy** y de una persona **mayor de edad (mínimo 18
+  años**, art. 234 del Código Civil). Quien cumple 18 hoy puede registrarse;
+  quien cumple 18 mañana, todavía no. El selector de fecha queda acotado
+  automáticamente entre `hoy − 18 años` y ayer.
 
 ### Pruebas
 
 ```bash
-cd backend-servlets && mvn test                                # 143 pruebas
+cd backend-servlets && mvn test                                # 157 pruebas
 node frontend/tests/auth_validation_test.js                    # casos PV-01 a PV-17
-python3 -m unittest discover -s frontend/tests -p 'test_*.py'  # 16 pruebas
+python3 -m unittest discover -s frontend/tests -p 'test_*.py'  # 19 pruebas
 ```
 
 El detalle de los casos de prueba (PV-01 a PV-17, PF e incidencias) está en
