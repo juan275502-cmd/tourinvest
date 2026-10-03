@@ -27,8 +27,19 @@ logs/
 *.iml
 .vscode/
 
-# Postman (exportaciones locales del runner, no la coleccion del repo)
+# Postman
+# - newman-report/  : reportes de ejecucion (se regeneran)
+# - postman/, .postman/ : "Local View" de la extension de VS Code. Son archivos
+#   AUTO-GENERADOS y especificos de cada maquina (contienen el UUID del
+#   workspace y el orden de las capturas). Ademas la extension captura
+#   automaticamente las peticiones que se hacen en la app, asi que en cualquier
+#   momento podrian quedar escritos tokens JWT reales (Authorization: Bearer).
+#   La coleccion que si se versiona es tourinvest_postman_collection.json +
+#   tourinvest_postman_environment.json (sus variables token_* van vacias a
+#   proposito: Postman las rellena al ejecutar el login).
 newman-report/
+/postman/
+/.postman/
 
 # OS
 .DS_Store
@@ -40,5 +51,3 @@ target/
 .env.local
 __pycache__/
 *.pyc
-/postman/
-/.postman/
