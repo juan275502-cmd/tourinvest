@@ -59,9 +59,9 @@ y persiste el token en `sessionStorage`. Ábrelo directamente en el navegador
 
 | Rol | Correo | Contraseña |
 |---|---|---|
-| Administrador | kike@tourinvest.com | 123456 |
-| Analista | marlen@tourinvest.com | 123456 |
-| Inversionista | juan@tourinvest.com | 123456 |
+| Administrador | kike@******** | ****** |
+| Analista | marlen@******** | ****** |
+| Inversionista | juan@******* | ***** |
 
 ### 2. Backend Java Spring Boot (API REST canónica — :8080)
 Requiere MySQL corriendo y la base `tourinvest` (`query.sql`):
