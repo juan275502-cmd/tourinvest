@@ -157,5 +157,69 @@ window.TourInvestUI.Perfil = (function () {
     }
   }
 
+  const PLANTILLA_MODAL = `
+<div class="modal" id="modal-perfil" aria-hidden="true" role="dialog">
+  <div class="modal__backdrop" data-close-modal onclick="TourInvestUI.Perfil.cerrarModal()"></div>
+  <div class="modal__card">
+    <div class="modal__header">
+      <h3>Editar mi perfil</h3>
+      <button class="modal__close" type="button" onclick="TourInvestUI.Perfil.cerrarModal()" aria-label="Cerrar">✕</button>
+    </div>
+    <div class="modal__body">
+      <div id="mensaje-perfil" class="mensaje-global"></div>
+      <p class="muted" style="font-size: 12px;">Solo puedes editar tu propio perfil. El rol y el estado los asigna el Administrador.</p>
+      <form id="form-perfil" onsubmit="return TourInvestUI.Perfil.guardar(event)">
+        <div class="field">
+          <label for="perfil-form-nombre">Nombre</label>
+          <input type="text" id="perfil-form-nombre" name="nombre1" maxlength="30" required>
+        </div>
+        <div class="field">
+          <label for="perfil-form-apellido">Apellido</label>
+          <input type="text" id="perfil-form-apellido" name="apellido1" maxlength="100" required>
+        </div>
+        <div class="field">
+          <label for="perfil-form-cedula">Cédula</label>
+          <input type="text" id="perfil-form-cedula" name="cedula" maxlength="20" required>
+        </div>
+        <div class="field">
+          <label for="perfil-form-nacimiento">Fecha de nacimiento</label>
+          <input type="date" id="perfil-form-nacimiento" name="fechaNacimiento" required>
+        </div>
+        <div class="field">
+          <label for="perfil-form-correo">Correo (es tu usuario de acceso)</label>
+          <input type="email" id="perfil-form-correo" name="correo" maxlength="120" required>
+        </div>
+        <button type="submit" class="btn-primary">Guardar cambios</button>
+      </form>
+
+      <hr style="margin: 20px 0; border: none; border-top: 1px solid #d8dee9;">
+
+      <h4 style="margin: 0 0 8px;">Cambiar contraseña</h4>
+      <form id="form-perfil-clave" onsubmit="return TourInvestUI.Perfil.cambiarContrasena(event)">
+        <div class="field">
+          <label for="perfil-clave-actual">Contraseña actual</label>
+          <input type="password" id="perfil-clave-actual" name="contrasenaActual" required>
+        </div>
+        <div class="field">
+          <label for="perfil-clave-nueva">Nueva contraseña (mínimo 12)</label>
+          <input type="password" id="perfil-clave-nueva" name="contrasenaNueva" minlength="12" maxlength="72" required>
+        </div>
+        <button type="submit" class="btn-primary">Cambiar contraseña</button>
+      </form>
+    </div>
+  </div>
+</div>`;
+
+  /** Inserta el modal una sola vez, para que los 3 HTML no lo dupliquen. */
+  function montarModal() {
+    if (document.getElementById("modal-perfil")) return;
+    document.body.insertAdjacentHTML("beforeend", PLANTILLA_MODAL);
+  }
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", montarModal);
+  } else {
+    montarModal();
+  }
+
   return { cargar, abrirModal, cerrarModal, rellenarFormulario, guardar, cambiarContrasena };
 })();

@@ -38,7 +38,7 @@ LOG_DIR="$ROOT/logs"
 SITIO="www.tourinvest.com"         # nombre visible en el navegador
 IP_LOOPBACK="127.0.0.1"           # direccion real (loopback IPv4)
 PUERTO_API=8080                    # API Spring Boot
-PAGINA_INICIO="index.html"   # punto de entrada de la aplicacion
+PAGINA_INICIO=""   # el servidor sirve index.html en "/" (igual que setup.ps1)
 
 # --- Python: preferimos el .venv del repositorio, si no el del sistema -------
 PY=""
@@ -92,6 +92,8 @@ puerto_abierto() {
 # de verdad (http://www.tourinvest.com).
 url_web() {
   local ruta="${1:-}"
+  ruta="${ruta#/}"                      # sin barra inicial
+  [ -n "$ruta" ] && ruta="/$ruta"       # una sola barra entre dominio y pagina
   if [ "$PUERTO_WEB" = "80" ]; then
     echo "http://$SITIO$ruta"
   else

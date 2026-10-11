@@ -12,8 +12,7 @@ independiente y documenta su propio sistema: no mezcles comandos de uno con el o
 | Solo el sitio (puerto 80) | `.\setup.ps1 run-frontend` | `./setup.sh run-frontend` |
 | Ayuda | `.\setup.ps1 help` | `./setup.sh help` |
 
-En Windows también vale `.\setup.cmd run` (doble clic) o el lanzador
-`.\iniciar-todo.cmd`.
+En Windows basta con hacer doble clic en `setup.cmd` (equivale a `.\setup.ps1 run`).
 
 ## La URL no muestra puerto
 
@@ -22,8 +21,8 @@ que el navegador muestra la dirección pelada, como si fuera un dominio real:
 
 | | Dirección en el navegador |
 |---|---|
-| Portada | **http://www.tourinvest.com** |sudo 
-| Login | **http://www.tourinvest.com** |
+| Portada | **http://www.tourinvest.com** |
+| Login | **http://www.tourinvest.com/view/login.html** |
 | API | http://www.tourinvest.com:8080 (esta sí lleva puerto: es la API) |
 
 > En Linux el puerto 80 es privilegiado: la primera vez el script te dirá cómo

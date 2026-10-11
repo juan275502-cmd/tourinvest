@@ -103,15 +103,15 @@ Detalle completo en `README.md` → *Validación de datos*.
 
 > Durante la ejecución de las pruebas automatizadas **no se identificaron
 > errores en los casos evaluados**: las cuatro suites quedan en verde
-> (157 pruebas JUnit · 19 pruebas Python · `auth_validation_test.js` en Node).
+> (pruebas JUnit · pruebas Python · `auth_validation_test.js` en Node).
 
 ---
 
 ## 5. Cómo reproducir
 
 ```bash
-cd backend-servlets && mvn test                                # 143 pruebas
-python3 -m unittest discover -s frontend/tests -p 'test_*.py'  # 16 pruebas
+cd backend-servlets && mvn test
+python3 -m unittest discover -s frontend/tests -p 'test_*.py'
 node frontend/tests/auth_validation_test.js                    # PV-01 a PV-17
 ```
 
@@ -123,8 +123,3 @@ sudo systemctl start mysql && ./setup.sh run
 
 La colección de Postman (`tourinvest_postman_collection.json`) cubre además los
 35 casos de la API; sus cuerpos ya usan una contraseña que cumple la política.
-
-
-git add .
-git commit -m "Se Corrige formulario de registro y se hacen validaciones con postman"
-git push origin main

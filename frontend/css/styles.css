@@ -249,7 +249,8 @@ select:focus {
 }
 
 .sidebar nav a:hover,
-.sidebar nav a.active {
+.sidebar nav a.active,
+.sidebar nav a.sidebar__link--activo {
   background: rgba(255, 255, 255, 0.08);
   border-left-color: var(--verde);
   color: var(--blanco);
@@ -282,66 +283,6 @@ select:focus {
 
 
 /* ---------- Header superior (estilo info/app/App.tsx) ---------- */
-
-.top-header {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid rgba(30, 58, 95, 0.12);
-}
-
-.top-header__inner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 14px 18px;
-}
-
-.top-header__brand {
-  display: inline-flex;
-  align-items: center;
-  gap: 12px;
-  cursor: default;
-  user-select: none;
-}
-
-.top-header__logo {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  background: var(--gris-claro);
-  object-fit: cover;
-}
-
-.top-header__titles {
-  display: flex;
-  flex-direction: column;
-  line-height: 1.1;
-}
-
-.top-header__titles h1 {
-  margin: 0;
-  color: var(--azul-oscuro);
-  font-size: 16px;
-  font-weight: 800;
-}
-
-.top-header__titles p {
-  margin: 3px 0 0;
-  color: rgba(30, 58, 95, 0.62);
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.top-header__right {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
 .user-chip {
   background: var(--blanco);
   border-radius: 999px;
@@ -386,28 +327,6 @@ select:focus {
   color: #C09A3A;
   border: 1px solid rgba(192, 154, 58, 0.30);
 }
-
-.top-header__logout {
-
-  text-decoration: none;
-  background: rgba(30, 58, 95, 0.06);
-  color: var(--azul-oscuro);
-  border: 1px solid rgba(30, 58, 95, 0.12);
-  padding: 10px 14px;
-  border-radius: 10px;
-  font-weight: 700;
-  font-size: 13px;
-  transition: background 0.15s, border-color 0.15s;
-}
-
-.top-header__logout:hover {
-  background: rgba(46, 139, 87, 0.10);
-  border-color: rgba(46, 139, 87, 0.28);
-}
-
-
-
-
 
 /* (compatibilidad) */
 .topbar {
@@ -815,10 +734,6 @@ th {
     display: none;
   }
 
-  .main-content {
-    padding: 20px;
-  }
-
   .home-hero {
     align-items: flex-start;
     flex-direction: column;
@@ -1070,68 +985,13 @@ th {
   content: "✓";
 }
 
-/* ---------- Dashboard: navegación de vistas (.sidebar__link / .vista) ---------- */
-.sidebar__link,
-.sidebar-link,
-.sidebar nav a {
-  display: block;
-  width: 100%;
-  padding: 10px 16px;
-  margin-bottom: 4px;
-  border-radius: 6px;
-  color: var(--gris-texto);
-  text-decoration: none;
-  font-size: 14px;
-  font-weight: 600;
-  border-left: 3px solid transparent;
-  transition: background 0.15s, border-color 0.15s;
-}
-.sidebar__link:hover,
-.sidebar nav a:hover,
-.sidebar__link--activo,
-.sidebar nav a.active {
-  background: rgba(46, 139, 87, 0.08);
-  border-left-color: var(--verde);
-  color: var(--azul-oscuro);
-}
-
 /* Las vistas del dashboard se alternan con .vista--activa */
 .vista {
   display: none;
 }
-.vista.vista--activa,
-.view[data-view-pane] {
+.vista.vista--activa {
   display: block;
 }
-.view[data-view-pane] {
-  display: none;
-}
-.view[data-view-pane]:target,
-.view[data-view-pane].view--activa {
-  display: block;
-}
-
-/* ---------- Dashboard: topbar / user-chip (ya existente, refuerzo) ---------- */
-.top-header__right .user-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: var(--gris-claro);
-  border-radius: 999px;
-  padding: 6px 12px;
-  font-size: 14px;
-}
-.role-badge {
-  display: inline-block;
-  padding: 3px 10px;
-  border-radius: 12px;
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--blanco);
-}
-.role-badge--admin { background: var(--azul-oscuro); }
-.role-badge--analista { background: #2f6fd8; }
-.role-badge--inversionista { background: var(--verde); }
 
 /* ---------- Dashboard: tarjetas de resumen / deltas ---------- */
 .tarjeta {
@@ -1319,3 +1179,33 @@ th {
   padding: 6px 4px;
 }
 .btn-link:hover { color: #256e46; }
+/* ---------- Texto atenuado y cabecera de panel (antes solo en real_theme.css) ---------- */
+.muted {
+  color: var(--texto-secundario);
+  font-weight: 600;
+}
+.panel-role-badge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 2px 0 14px;
+  flex-wrap: wrap;
+}
+.panel-role-badge__pill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-weight: 800;
+  font-size: 13px;
+}
+.panel-role-badge__pill--admin {
+  background: rgba(30, 58, 95, 0.08);
+  border: 1px solid rgba(30, 58, 95, 0.18);
+  color: var(--azul-oscuro);
+}
+.panel-role-badge__meta {
+  color: var(--texto-secundario);
+  font-weight: 600;
+  font-size: 13px;
+}

@@ -13,12 +13,15 @@ documentos fuente (`arquitectura.md`, `navegacion.md`, `prototipos.md`,
 tourinvest/
 ├── frontend/                     # HTML + CSS (Presentation)
 │   ├── css/styles.css            # Paleta: #1E3A5F, #2E8B57, #FFFFFF + responsive
-│   ├── login.html                # RF01 - Autenticar usuario
-│   ├── registro.html             # RF04 - Registrar usuario
-│   ├── recuperar.html            # Recuperar / restablecer contraseña
-│   ├── inversionista.html        # RF07 - Portafolio, Alertas, Noticias, Empresas, Perfil
-│   ├── analista.html             # RF10 - Empresas, Indicadores, Reportes, Recomendaciones
-│   └── administrador.html        # RF13 - Usuarios, Roles, Auditorías, Configuración
+│   ├── index.html                # Landing
+│   ├── js/                       # auth, api, dashboards, perfil, usuarios, graficas
+│   └── view/
+│       ├── login.html            # RF01 - Autenticar usuario
+│       ├── registro.html         # RF04 - Registrar usuario
+│       ├── recuperar.html        # Recuperar contraseña
+│       ├── inversionista.html    # RF07 - Portafolio, Alertas, Noticias, Empresas, Perfil
+│       ├── analista.html         # RF10 - Empresas, Indicadores, Reportes, Recomendaciones
+│       └── administrador.html    # RF13 - Usuarios, Empresas, Roles, Auditorías, Configuración
 │
 ├── backend-python/               # API REST (Clean Architecture + Features First)
 │   ├── app.py                    # Punto de entrada Flask
@@ -54,8 +57,9 @@ tourinvest/
 
 ### 1. Frontend (HTML/CSS)
 El frontend (HTML/CSS/JS) consume la API Spring Boot de Java (`http://www.tourinvest.com:8080`) con JWT
-y persiste el token en `sessionStorage`. Ábrelo directamente en el navegador
-(`frontend/login.html`); también puedes abrir `frontend/index.html` (landing).
+y persiste el token en `sessionStorage`. Se sirve con `setup.ps1 run` (Windows) o
+`./setup.sh run` (Linux) en http://www.tourinvest.com. No lo abras con doble clic
+(`file://`): CORS solo admite los orígenes de `CORS_ALLOWED_ORIGINS`.
 
 | Rol | Correo | Contraseña |
 |---|---|---|
@@ -155,9 +159,10 @@ mayúsculas; al menos 2 números."*
 ### Pruebas
 
 ```bash
-cd backend-servlets && mvn test                                # 157 pruebas
+cd backend-servlets && mvn test                                # JUnit 5 + Mockito (ver "Tests run" en la salida)
 node frontend/tests/auth_validation_test.js                    # casos PV-01 a PV-17
-python3 -m unittest discover -s frontend/tests -p 'test_*.py'  # 19 pruebas
+python3 -m unittest discover -s frontend/tests -p 'test_*.py'  # estructura HTML/JS
+python3 -m unittest discover -s backend-python/tests -t backend-python -v   # réplica Python
 ```
 
 El detalle de los casos de prueba (PV-01 a PV-17, PF e incidencias) está en

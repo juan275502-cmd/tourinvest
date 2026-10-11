@@ -60,8 +60,10 @@ window.TourInvestUI.Usuarios = (function () {
       f.apellido1.value = partes.slice(1).join(" ");
       f.correo.value = usuario.correo || "";
       f.rol.value = usuario.rol || "Inversionista";
-      // Cedula y contrasena se dejan vacias: si no se mandan, no cambian.
+     // El backend exige cedula y fecha de nacimiento tambien al editar
+      // (UsuarioAdminRequest); solo la contrasena es opcional.
       f.cedula.value = "";
+      f.fechaNacimiento.value = "";
       f.contrasena.value = "";
       // El id se guarda en el formulario: es lo que distingue alta de edicion
       // (y permite que el submit sepa si debe hacer PUT o POST).
@@ -96,8 +98,6 @@ window.TourInvestUI.Usuarios = (function () {
 
     // Al editar, los campos opcionales vacios se omiten para no borrarlos.
     if (idUsuario) {
-      if (!cuerpo.cedula) delete cuerpo.cedula;
-      if (!cuerpo.fechaNacimiento) delete cuerpo.fechaNacimiento;
       if (!cuerpo.contrasena) delete cuerpo.contrasena;
     }
 
