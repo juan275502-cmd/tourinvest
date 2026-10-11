@@ -1,6 +1,7 @@
 // URL canonica de la API: www.tourinvest.com (mapeado a 127.0.0.1 en el
 // archivo de hosts del sistema). Ver STARTUP.md -> "Convencion de hostname".
-const API_BASE_URL = "http://www.tourinvest.com:8080";
+const { obtenerToken, llamar: llamarApi, moneda: formatearMoneda,
+  porcentaje: formatearPorcentaje, esc } = window.TourInvestUI.Api;
 
 // Alias corto al modulo de graficas SVG (js/graficas.js).
 const Graficas = window.TourInvestUI.Graficas;
@@ -107,7 +108,7 @@ async function cargarResumenPortafolio() {
       const claseRendimiento = posicion.rendimientoPorcentual >= 0 ? "positiva" : "negativa";
       return `
         <tr>
-          <td><span class="celda-simbolo">${posicion.simbolo}</span> · ${posicion.nombreEmpresa}</td>
+          <td><span class="celda-simbolo">${esc(posicion.simbolo)}</span> · ${esc(posicion.nombreEmpresa)}</td>
           <td class="celda-numero">${posicion.cantidad}</td>
           <td class="celda-numero">${formatearMoneda(posicion.precioCompra)}</td>
           <td class="celda-numero">${formatearMoneda(posicion.precioActual)}</td>
@@ -209,8 +210,8 @@ async function cargarEmpresas() {
       const claseVariacion = variacion >= 0 ? "positiva" : "negativa";
       return `
         <tr>
-          <td><span class="celda-simbolo">${empresa.simbolo}</span> · ${empresa.nombre}</td>
-          <td>${empresa.sector}</td>
+          <td><span class="celda-simbolo">${esc(empresa.simbolo)}</span> · ${esc(empresa.nombre)}</td>
+          <td>${esc(empresa.sector)}</td>
           <td class="celda-numero">${empresa.precioActual != null ? formatearMoneda(empresa.precioActual) : "—"}</td>
           <td class="celda-numero etiqueta-variacion etiqueta-variacion--${claseVariacion}">${formatearPorcentaje(variacion)}</td>
           <td><button class="boton-fila" onclick="abrirDetalleEmpresa(${empresa.idEmpresa})">Ver detalle</button></td>
@@ -315,10 +316,10 @@ async function cargarAlertas() {
     .map(
       (alerta) => `
         <tr>
-          <td class="celda-simbolo">${alerta.simbolo}</td>
+          <td class="celda-simbolo">${esc(alerta.simbolo)}</td>
           <td class="celda-numero">${formatearMoneda(alerta.precioObjetivo)}</td>
           <td class="celda-numero">${formatearMoneda(alerta.precioActual)}</td>
-          <td><span class="estado-pill estado-pill--${alerta.estado.toLowerCase()}">${alerta.estado}</span></td>
+          <td><span class="estado-pill estado-pill--${esc(alerta.estado.toLowerCase())}">${esc(alerta.estado)}</span></td>
           <td>${alerta.estado === "Activa" ? `<button class="boton-fila boton-fila--cancelar" onclick="cancelarAlerta(${alerta.idAlerta})">Cancelar</button>` : ""}</td>
         </tr>`
     )

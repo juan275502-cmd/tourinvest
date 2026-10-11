@@ -1,6 +1,7 @@
 // URL canonica de la API: www.tourinvest.com (mapeado a 127.0.0.1 en el
 // archivo de hosts del sistema). Ver STARTUP.md -> "Convencion de hostname".
-const API_BASE_URL = "http://www.tourinvest.com:8080";
+const { obtenerToken, llamar: llamarApi, moneda: formatearMoneda,
+  porcentaje: formatearPorcentaje, esc } = window.TourInvestUI.Api;
 
 // Alias corto al modulo de graficas SVG (js/graficas.js).
 const Graficas = window.TourInvestUI.Graficas;
@@ -93,8 +94,8 @@ async function cargarEmpresas() {
       const claseVariacion = variacion >= 0 ? "positiva" : "negativa";
       return `
         <tr>
-          <td><span class="celda-simbolo">${empresa.simbolo}</span> · ${empresa.nombre}</td>
-          <td>${empresa.sector}</td>
+          <td><span class="celda-simbolo">${esc(empresa.simbolo)}</span> · ${esc(empresa.nombre)}</td>
+          <td>${esc(empresa.sector)}</td>
           <td class="celda-numero">${empresa.precioActual != null ? formatearMoneda(empresa.precioActual) : "—"}</td>
           <td class="celda-numero etiqueta-variacion etiqueta-variacion--${claseVariacion}">${formatearPorcentaje(variacion)}</td>
         </tr>`;
@@ -103,7 +104,7 @@ async function cargarEmpresas() {
 
   // Poblar el selector de empresa del formulario de crear reporte
   selectorEmpresa.innerHTML = empresasCache
-    .map((empresa) => `<option value="${empresa.idEmpresa}">${empresa.simbolo} · ${empresa.nombre}</option>`)
+    .map((empresa) => `<option value="${empresa.idEmpresa}">${esc(empresa.simbolo)} · ${esc(empresa.nombre)}</option>`)
     .join("");
 
   // Gráfica: variación porcentual de cada empresa (verde/rojo según signo).
@@ -180,9 +181,9 @@ async function cargarReportes() {
     .map(
       (reporte) => `
         <tr>
-          <td>${reporte.titulo}</td>
-          <td>${reporte.nombreEmpresa}</td>
-          <td>${reporte.autor}</td>
+          <td>${esc(reporte.titulo)}</td>
+          <td>${esc(reporte.nombreEmpresa)}</td>
+          <td>${esc(reporte.autor)}</td>
           <td class="celda-numero">${new Date(reporte.fechaGeneracion).toLocaleDateString("es-CO")}</td>
         </tr>`
     )

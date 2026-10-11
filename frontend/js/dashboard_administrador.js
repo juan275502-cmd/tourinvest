@@ -1,6 +1,7 @@
 // URL canonica de la API: www.tourinvest.com (mapeado a 127.0.0.1 en el
 // archivo de hosts del sistema). Ver STARTUP.md -> "Convencion de hostname".
-const API_BASE_URL = "http://www.tourinvest.com:8080";
+const { obtenerToken, llamar: llamarApi, moneda: formatearMoneda,
+  porcentaje: formatearPorcentaje, esc } = window.TourInvestUI.Api;
 
 function obtenerToken() {
   const token = sessionStorage.getItem("tourinvest_token");
@@ -81,10 +82,10 @@ function renderUsuarios() {
 
   const visibles = filtro
     ? usuariosCache.filter(
-        (u) =>
-          (u.nombreCompleto || "").toLowerCase().includes(filtro) ||
-          (u.correo || "").toLowerCase().includes(filtro)
-      )
+      (u) =>
+        (u.nombreCompleto || "").toLowerCase().includes(filtro) ||
+        (u.correo || "").toLowerCase().includes(filtro)
+    )
     : usuariosCache;
 
   if (visibles.length === 0) {
@@ -98,25 +99,24 @@ function renderUsuarios() {
     .map((usuario) => {
       const esActivo = usuario.estado === "Activo";
       const esUsuarioPropio = usuario.correo === correoPropio;
-      // Escapa comillas para poder inyectar el nombre en el onclick sin romperlo.
-      const nombreSeguro = (usuario.nombreCompleto || "").replace(/'/g, "\\'");
+
       // Acciones disponibles segun el estado del usuario.
       const acciones = [
         `<button class="boton-fila" onclick="abrirModalEditarUsuario(${usuario.idUsuario})">Editar</button>`,
         esUsuarioPropio
           ? `<span style="color: var(--texto-secundario); font-size: 0.8rem;">Tu cuenta</span>`
           : esActivo
-          ? `<button class="boton-fila boton-fila--cancelar" onclick="suspenderUsuario(${usuario.idUsuario})">Suspender</button>`
-          : `<button class="boton-fila" onclick="activarUsuario(${usuario.idUsuario})">Activar</button>`,
+            ? `<button class="boton-fila boton-fila--cancelar" onclick="suspenderUsuario(${usuario.idUsuario})">Suspender</button>`
+            : `<button class="boton-fila" onclick="activarUsuario(${usuario.idUsuario})">Activar</button>`,
         esUsuarioPropio
           ? ""
-          : `<button class="boton-fila boton-fila--cancelar" onclick="eliminarUsuario(${usuario.idUsuario}, '${nombreSeguro}')">Eliminar</button>`,
+          : `<button class="boton-fila boton-fila--cancelar" data-nombre="${esc(usuario.nombreCompleto)}" onclick="eliminarUsuario(${usuario.idUsuario}, this.dataset.nombre)">Eliminar</button>`,
       ].filter(Boolean).join(" ");
 
       return `
         <tr>
-          <td>${usuario.nombreCompleto}</td>
-          <td>${usuario.correo}</td>
+          <td>${esc(usuario.nombreCompleto)}</td>
+          <td>${esc(usuario.correo)}</td>
           <td>${usuario.rol}</td>
           <td><span class="estado-pill estado-pill--${esActivo ? "activa" : "cancelada"}">${usuario.estado}</span></td>
           <td style="white-space: nowrap;">${acciones}</td>
@@ -201,18 +201,17 @@ async function cargarEmpresasAdmin() {
     .map((empresa) => {
       const variacion = empresa.variacion ?? 0;
       const claseVariacion = variacion >= 0 ? "positiva" : "negativa";
-      const nombreSeguro = (empresa.nombre || "").replace(/'/g, "\\'");
       return `
         <tr>
-          <td><span class="celda-simbolo">${empresa.simbolo}</span></td>
-          <td>${empresa.nombre}</td>
-          <td>${empresa.sector}</td>
-          <td>${empresa.pais ?? "—"}</td>
+          <td><span class="celda-simbolo">${esc(empresa.simbolo)}</span></td>
+          <td>${esc(empresa.nombre)}</td>
+          <td>${esc(empresa.sector)}</td>
+          <td>${esc(empresa.pais ?? "—")}</td>
           <td class="celda-numero">${empresa.precioActual != null ? formatearMoneda(empresa.precioActual) : "—"}</td>
           <td class="celda-numero etiqueta-variacion etiqueta-variacion--${claseVariacion}">${formatearPorcentaje(variacion)}</td>
           <td style="white-space: nowrap;">
             <button class="boton-fila" onclick="abrirModalEditarEmpresa(${empresa.idEmpresa})">Editar</button>
-            <button class="boton-fila boton-fila--cancelar" onclick="eliminarEmpresa(${empresa.idEmpresa}, '${nombreSeguro}')">Eliminar</button>
+            <button class="boton-fila boton-fila--cancelar" data-nombre="${esc(empresa.nombre)}" onclick="eliminarEmpresa(${empresa.idEmpresa}, this.dataset.nombre)">Eliminar</button>
           </td>
         </tr>`;
     })
