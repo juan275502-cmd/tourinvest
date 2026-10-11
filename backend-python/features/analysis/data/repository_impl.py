@@ -1,4 +1,4 @@
-from core.database import INDICADORES_DB, REPORTES_DB, EMPRESAS_DB, siguiente_id
+from core.database import INDICADORES_DB, REPORTES_DB, EMPRESAS_DB
 
 
 class AnalysisRepositoryImpl:

@@ -1,7 +1,7 @@
 # Tests de backend-python (réplica Python)
 
 Cobertura:
-- `test_repositories.py` — 13 tests unitarios de las implementaciones en memoria
+- `test_repositories.py` — 19 tests unitarios de las implementaciones en memoria
   (autenticación RF01, registro RF04, inversión RF07, análisis RF10, entidad Usuario).
 - `test_api.py` — 15 tests de integración sobre el Flask `test_client`
   (health, auth, inversiones, análisis, dashboard/admin).

@@ -14,6 +14,7 @@ entities = cargar_modulo("features.authentication.domain.entities")
 AuthRepo = cargar_modulo("features.authentication.data.repository_impl").UsuarioRepositoryImpl
 AnalysisRepo = cargar_modulo("features.analysis.data.repository_impl").AnalysisRepositoryImpl
 InvestRepo = cargar_modulo("features.investments.data.repository_impl").InvestmentsRepositoryImpl
+DashRepo = cargar_modulo("features.dashboard.data.repository_impl").DashboardRepositoryImpl
 
 # Snapshots para restaurar el estado en memoria entre tests
 _SNAP_USUARIOS = [dict(u) for u in database.USUARIOS_DB]
@@ -22,7 +23,7 @@ _SNAP_REPORTES = [dict(r) for r in database.REPORTES_DB]
 
 class TestAutenticacion(unittest.TestCase):
     def setUp(self):
-        database.USUARIOS_DB[:] = [_SNAP_USUARIOS[u] for u in range(len(_SNAP_USUARIOS))]
+        database.USUARIOS_DB[:] = [dict(u) for u in _SNAP_USUARIOS]
         self.repo = AuthRepo()
 
     def test_login_correcto(self):
@@ -44,7 +45,7 @@ class TestAutenticacion(unittest.TestCase):
 
 class TestRegistro(unittest.TestCase):
     def setUp(self):
-        database.USUARIOS_DB[:] = [_SNAP_USUARIOS[i] for i in range(len(_SNAP_USUARIOS))]
+        database.USUARIOS_DB[:] = [dict(u) for u in _SNAP_USUARIOS]
         self.repo = AuthRepo()
 
     def test_registro_crea_inversionista_activo(self):
@@ -66,7 +67,7 @@ class TestRegistro(unittest.TestCase):
 
 class TestAnalisis(unittest.TestCase):
     def setUp(self):
-        database.REPORTES_DB[:] = [_SNAP_REPORTES[i] for i in range(len(_SNAP_REPORTES))]
+        database.USUARIOS_DB[:] = [dict(u) for u in _SNAP_REPORTES]
         self.repo = AnalysisRepo()
 
     def test_listar_reportes(self):
@@ -111,3 +112,38 @@ class TestEntityUsuario(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+class TestDashboard(unittest.TestCase):
+    def setUp(self):
+        database.USUARIOS_DB[:] = [dict(u) for u in _SNAP_USUARIOS]
+        self.repo = DashRepo()
+
+    def _datos(self, **extra):
+        base = {"nombre": "Luis", "apellido": "Torres", "cedula": "1006006006",
+                "correo": "luis@tourinvest.com", "password": "Clave123", "rol": "Analista"}
+        base.update(extra)
+        return base
+
+    def test_listar_no_expone_password(self):
+        self.assertTrue(all("password" not in u for u in self.repo.listar_usuarios()))
+
+    def test_crear_usuario_ignora_campos_extra(self):
+        nuevo = self.repo.crear_usuario(self._datos(estado="Inactivo", admin=True))
+        self.assertEqual(nuevo["estado"], "Activo")
+        self.assertNotIn("admin", nuevo)
+        self.assertNotIn("password", nuevo)
+
+    def test_crear_usuario_correo_duplicado(self):
+        with self.assertRaises(ValueError):
+            self.repo.crear_usuario(self._datos(correo="INVERSOR@tourinvest.com"))
+
+    def test_crear_usuario_rol_invalido(self):
+        with self.assertRaises(ValueError):
+            self.repo.crear_usuario(self._datos(rol="SuperAdmin"))
+
+    def test_cambiar_estado_inexistente_devuelve_none(self):
+        self.assertIsNone(self.repo.cambiar_estado(999, "Inactivo"))
+
+    def test_cambiar_estado_invalido(self):
+        with self.assertRaises(ValueError):
+            self.repo.cambiar_estado(1, "raro")
+            
