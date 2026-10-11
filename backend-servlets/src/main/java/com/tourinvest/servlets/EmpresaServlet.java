@@ -1,6 +1,6 @@
 package com.tourinvest.servlets;
 
-import com.tourinvest.servlets.util.ConexionJDBC;
+import com.tourinvest.backend.jdbc.ConexionJDBC;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;

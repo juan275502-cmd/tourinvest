@@ -53,13 +53,12 @@ public class PerfilService {
 
         // Se conservan rol, estado, contrasena y fecha de registro: aqui solo
         // cambian los datos personales declarados en la peticion.
-        usuario.setNombre1(request.getNombre1().trim());
-        usuario.setApellido1(request.getApellido1().trim());
-        usuario.setCedula(request.getCedula().trim());
+        usuario.setNombre1(request.getNombre1());
+        usuario.setApellido1(request.getApellido1());
+        usuario.setCedula(request.getCedula());
         usuario.setFechaNacimiento(request.getFechaNacimiento());
-        // El correo tambien es la identidad de login. Se normaliza a minusculas
-        // para que el login no falle por mayusculas/minusculas.
-        usuario.setCorreo(request.getCorreo().trim().toLowerCase());
+        // El correo ya llega en minúsculas desde DatosPersonalesRequest.
+        usuario.setCorreo(request.getCorreo());
 
         return mapear(usuarioRepository.save(usuario));
     }

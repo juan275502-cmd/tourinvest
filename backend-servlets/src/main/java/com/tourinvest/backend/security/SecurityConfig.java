@@ -129,18 +129,8 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.PUT, "/empresas/**").hasRole("ADMINISTRADOR")
                 .requestMatchers(HttpMethod.DELETE, "/empresas/**").hasRole("ADMINISTRADOR")
                 .requestMatchers("/admin/**").hasRole("ADMINISTRADOR")
-                // El CRUD de usuarios cuelga de /admin/**, asi que hereda el rol
-                // de Administrador por la regla anterior. Se deja explicito para
-                // que quede claro quien puede crear/editar/eliminar usuarios.
-                .requestMatchers(HttpMethod.POST, "/admin/usuarios").hasRole("ADMINISTRADOR")
-                .requestMatchers(HttpMethod.PUT, "/admin/usuarios/**").hasRole("ADMINISTRADOR")
-                .requestMatchers(HttpMethod.DELETE, "/admin/usuarios/**").hasRole("ADMINISTRADOR")
                 .requestMatchers("/analista/**").hasRole("ANALISTA")
                 .requestMatchers("/inversionista/**").hasRole("INVERSIONISTA")
-                // Perfil propio: lo puede usar CUALQUIER usuario autenticado
-                // (los 3 roles). No lleva id en la URL, asi que nadie puede
-                // consultar ni editar el perfil de otra persona.
-                .requestMatchers("/perfil/**").authenticated()
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);

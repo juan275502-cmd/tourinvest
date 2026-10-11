@@ -22,8 +22,8 @@ public class AdministradorService {
     private final PasswordEncoder passwordEncoder;
 
     public AdministradorService(UsuarioRepository usuarioRepository,
-                                RolRepository rolRepository,
-                                PasswordEncoder passwordEncoder) {
+            RolRepository rolRepository,
+            PasswordEncoder passwordEncoder) {
         this.usuarioRepository = usuarioRepository;
         this.rolRepository = rolRepository;
         this.passwordEncoder = passwordEncoder;
@@ -47,16 +47,15 @@ public class AdministradorService {
     }
 
     // ---------- CRUD de usuarios (panel de Administrador) ----------
-
     /**
-     * Crea un usuario con el rol que indique el Administrador.
-     * A diferencia del registro publico (siempre Inversionista), aqui el
-     * administrador decide el rol inicial.
+     * Crea un usuario con el rol que indique el Administrador. A diferencia del
+     * registro publico (siempre Inversionista), aqui el administrador decide el
+     * rol inicial.
      */
     @Transactional
     public UsuarioResumenDTO crear(UsuarioAdminRequest request) {
-        String correo = request.getCorreo().trim().toLowerCase();
-        String cedula = request.getCedula().trim();
+        String correo = request.getCorreo();
+        String cedula = request.getCedula();
 
         if (usuarioRepository.existsByCorreo(correo)) {
             throw new IllegalArgumentException("Ya existe un usuario registrado con ese correo");
@@ -73,8 +72,8 @@ public class AdministradorService {
                 .orElseThrow(() -> new IllegalStateException("El rol seleccionado no existe"));
 
         Usuario nuevo = new Usuario();
-        nuevo.setNombre1(request.getNombre1().trim());
-        nuevo.setApellido1(request.getApellido1().trim());
+        nuevo.setNombre1(request.getNombre1());
+        nuevo.setApellido1(request.getApellido1());
         nuevo.setCedula(cedula);
         nuevo.setFechaNacimiento(request.getFechaNacimiento());
         nuevo.setCorreo(correo);
@@ -86,16 +85,16 @@ public class AdministradorService {
     }
 
     /**
-     * Edita un usuario. La contrasena SOLO se cambia si viene informed:
-     * si se deja vacia, el usuario conserva la que tenia.
+     * Edita un usuario. La contrasena SOLO se cambia si viene informed: si se
+     * deja vacia, el usuario conserva la que tenia.
      */
     @Transactional
     public UsuarioResumenDTO actualizar(Integer idUsuario, UsuarioAdminRequest request) {
         Usuario usuario = usuarioRepository.findById(idUsuario)
                 .orElseThrow(() -> new NoSuchElementException("Usuario no encontrado"));
 
-        String correo = request.getCorreo().trim().toLowerCase();
-        String cedula = request.getCedula().trim();
+        String correo = request.getCorreo();
+        String cedula = request.getCedula();
 
         // Unicidad excluyendo al propio usuario.
         if (usuarioRepository.existsByCorreoAndIdUsuarioNot(correo, idUsuario)) {
@@ -113,8 +112,8 @@ public class AdministradorService {
             throw new IllegalStateException("Debe existir al menos un usuario con rol Administrador");
         }
 
-        usuario.setNombre1(request.getNombre1().trim());
-        usuario.setApellido1(request.getApellido1().trim());
+        usuario.setNombre1(request.getNombre1());
+        usuario.setApellido1(request.getApellido1());
         usuario.setCedula(cedula);
         usuario.setFechaNacimiento(request.getFechaNacimiento());
         usuario.setCorreo(correo);
@@ -134,8 +133,8 @@ public class AdministradorService {
 
     /**
      * Aplica la misma politica de contrasena del registro publico
-     * ({@link PasswordPolicy}) a las contrasenas que fija el administrador.
-     * Se valida aqui, y no con {@code @ContrasenaSegura} en el DTO, porque al
+     * ({@link PasswordPolicy}) a las contrasenas que fija el administrador. Se
+     * valida aqui, y no con {@code @ContrasenaSegura} en el DTO, porque al
      * EDITAR la contrasena es opcional: si viene vacia debe conservarse la
      * anterior sin exigir la politica.
      */
@@ -148,8 +147,8 @@ public class AdministradorService {
 
     /**
      * Elimina un usuario. Se bloquea si tiene datos asociados (portafolios,
-     * alertas, reportes) porque las FK son ON DELETE RESTRICT: borrarla
-     * dejaria datos huerfanos o fallaria la integridad referencial.
+     * alertas, reportes) porque las FK son ON DELETE RESTRICT: borrarla dejaria
+     * datos huerfanos o fallaria la integridad referencial.
      */
     @Transactional
     public void eliminar(Integer idUsuario) {
@@ -171,7 +170,9 @@ public class AdministradorService {
         usuarioRepository.delete(usuario);
     }
 
-    /** El usuario tiene portafolios, alertas o reportes asociados. */
+    /**
+     * El usuario tiene portafolios, alertas o reportes asociados.
+     */
     private boolean tieneDatosAsociados(Integer idUsuario) {
         return usuarioRepository.existsByIdUsuario_IdUsuario(idUsuario);
     }

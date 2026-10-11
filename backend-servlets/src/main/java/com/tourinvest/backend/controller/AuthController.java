@@ -38,14 +38,12 @@ public class AuthController {
         }
 
         Usuario nuevoUsuario = new Usuario();
-        // Se recortan los espacios de los extremos (los espacios EN MEDIO si son
-        // validos: "María José") y el correo se normaliza a minúsculas para que
-        // "Ana@Tourinvest.com" no se registre dos veces (caso PV-09).
-        nuevoUsuario.setNombre1(request.getNombre1().trim());
-        nuevoUsuario.setApellido1(request.getApellido1().trim());
-        nuevoUsuario.setCedula(request.getCedula().trim());
+        // La normalización (trim, correo en minúsculas, caso PV-09) vive en DatosPersonalesRequest.
+        nuevoUsuario.setNombre1(request.getNombre1());
+        nuevoUsuario.setApellido1(request.getApellido1());
+        nuevoUsuario.setCedula(request.getCedula());
         nuevoUsuario.setFechaNacimiento(request.getFechaNacimiento());
-        nuevoUsuario.setCorreo(request.getCorreo().trim().toLowerCase());
+        nuevoUsuario.setCorreo(request.getCorreo());
         nuevoUsuario.setContrasena(request.getContrasena()); // se hashea dentro de AuthService.registrar
 
         // Registro público = siempre Inversionista. Admin/Analista se crean desde el panel de administrador.
