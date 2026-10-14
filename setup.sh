@@ -13,9 +13,10 @@
 #  COMANDOS:
 #    ./setup.sh check             # verifica java/mvn/mysql/node/python Y la conexion a la BD
 #    ./setup.sh seed              # carga query.sql (raiz) en la BD 'tourinvest'
+#    ./setup.sh test              # ejecuta TODAS las suites de pruebas (Java, Python, JS)
 #    ./setup.sh run-backend       # compila y arranca Spring Boot (API en :8080)
 #    ./setup.sh run-backend-fast  # empaqueta el JAR y arranca con 'java -jar' (mas rapido)
-#    ./setup.sh run-frontend      # sirve ./frontend en el puerto 80 y abre el navegador
+#    ./setup.sh run-frontend      # sirve la raiz del proyecto en el puerto 80 y abre el navegador
 #    ./setup.sh run               # ARRANCA EL PROYECTO COMPLETO (API + sitio)
 #    ./setup.sh help
 #
@@ -37,7 +38,7 @@ LOG_DIR="$ROOT/logs"
 # --- Direcciones y puertos del proyecto -------------------------------------
 SITIO="www.tourinvest.com"         # nombre visible en el navegador
 IP_LOOPBACK="127.0.0.1"           # direccion real (loopback IPv4)
-PUERTO_API=8080                    # API Spring Boot
+PUERTO_API=8080                    # API Spring Boot, debe estar oculto este puerto
 PAGINA_INICIO=""   # el servidor sirve index.html en "/" (igual que setup.ps1)
 
 # --- Python: preferimos el .venv del repositorio, si no el del sistema -------
@@ -305,7 +306,7 @@ check() {
     echo "  Todo listo. Pasos:"
     echo "    ./setup.sh run              # ARRANCA EL PROYECTO COMPLETO (recomendado)"
     echo "    ./setup.sh seed             # solo si aun no cargaste la BD"
-    echo "    API   http://$SITIO:$PUERTO_API"
+    echo "    API   http://$SITIO         # sin:$PUERTO_API se ve como dominio real" 
     echo "    Sitio $(url_web "$PAGINA_INICIO")"
   else
     echo "  Faltan requisitos. Detalle y solucion:"
@@ -420,7 +421,7 @@ run_backend() {
   asegurar_password_mysql
 
   cd "$ROOT/backend-servlets" || exit 1
-  echo "API en http://$SITIO:$PUERTO_API  (Ctrl+C para detener)"
+  echo "API en http://$SITIO         # sin:$PUERTO_API se ve como dominio real  (Ctrl+C para detener)"
   mvn spring-boot:run
 }
 
@@ -439,7 +440,7 @@ run_backend_fast() {
   asegurar_password_mysql
   preparar_jar
 
-  echo "API en http://$SITIO:$PUERTO_API  (Ctrl+C para detener)"
+  echo "API en http://$SITIO         # sin:$PUERTO_API se ve como dominio real  (Ctrl+C para detener)"
   java -jar "$JAR"
 }
 
@@ -461,7 +462,9 @@ abrir_navegador() {
   return 0
 }
 
-# Sirve ./frontend en :PUERTO_WEB y abre el navegador.
+# Sirve la raiz del proyecto en :PUERTO_WEB y abre el navegador. El index.html
+# vive en la raiz y referencia sus assets con rutas "frontend/...", por eso el
+# servidor se levanta desde $ROOT (no desde $ROOT/frontend).
 #   run_frontend          -> en primer plano (Ctrl+C la detiene)
 #   run_frontend si       -> en segundo plano, para que `run` pueda apagar
 #                            los dos servidores con un solo Ctrl+C
@@ -480,9 +483,11 @@ run_frontend() {
 
   # si el puerto es privilegiado, `sudo` se hace exec del interprete: el PID
   # guardado sigue siendo el del servidor, para poder pararlo con Ctrl+C.
-  local -a cmd_web=(${PREFIJO_WEB:+"$PREFIJO_WEB"} "$PY" -m http.server "$PUERTO_WEB" --bind "$IP_LOOPBACK")
+  # serve.py sirve la raiz del proyecto y bloquea rutas sensibles (.env, .git,
+  # backends...), a diferencia de `python -m http.server`.
+  local -a cmd_web=(${PREFIJO_WEB:+"$PREFIJO_WEB"} "$PY" "$ROOT/serve.py" "$PUERTO_WEB" --bind "$IP_LOOPBACK")
   if [ "$en_segundo_plano" = "si" ]; then
-    ( cd "$ROOT/frontend" && exec "${cmd_web[@]}" ) &
+    ( cd "$ROOT" && exec "${cmd_web[@]}" ) &
     FRONTEND_PID=$!
     # Esperamos a que el sitio acepte conexiones antes de seguir.
     local i listo=0
@@ -498,11 +503,11 @@ run_frontend() {
     fi
     wait "$FRONTEND_PID"     # espera hasta que llegue una senal
   else
-    ( cd "$ROOT/frontend" && exec "${cmd_web[@]}" )
+    ( cd "$ROOT" && exec "${cmd_web[@]}" )
   fi
 }
 
-# ARRANQUE COMPLETO DEL PROYECTO: API en :8080 + sitio en el puerto 80.
+# ARRANQUE COMPLETO DEL PROYECTO: API en puerto :8080 + sitio en el puerto 80 (estos puertos no deben.
 # Ambos servidores quedan en segundo plano: el backend escribiendo su log en
 # logs/backend.log y el sitio sirviendo en el puerto $PUERTO_WEB. Con un solo
 # Ctrl+C (o al cerrar la terminal) se apagan los DOS.
@@ -541,7 +546,7 @@ run_todo() {
   mkdir -p "$LOG_DIR"
   local log="$LOG_DIR/backend.log"
 
-  echo "  Backend  : http://$SITIO:$PUERTO_API   (log en logs/backend.log)"
+  echo "  Backend  : http://$SITIO         # sin:$PUERTO_API se ve como dominio real   (log en logs/backend.log)"
   ( cd "$ROOT/backend-servlets" && exec java -jar "$JAR" ) > "$log" 2>&1 &
   BACKEND_PID=$!
   # INT = Ctrl+C, TERM = kill, HUP = se cerro la terminal, EXIT = salida normal.
@@ -567,6 +572,84 @@ run_todo() {
   run_frontend si
 }
 
+# Ejecuta las 4 suites de pruebas del proyecto y sale con codigo 0/1.
+#   1) Backend Java (fuente de verdad)      -> mvn test   (JUnit 5 + Mockito)
+#   2) Backend Python (replica Flask)       -> unittest   (repos + API)
+#   3) Frontend JS (auth + graficas)        -> node       (assert + vm)
+#   4) Frontend estructura HTML/JS          -> unittest   (wiring de los dashboards)
+# Si falta una herramienta se avisa y se cuenta como suite fallida, pero el
+# resto de suites se ejecutan igual: asi se ve de una vez todo lo que passa.
+run_tests() {
+  echo "== TourInvest — suite de pruebas =="
+  echo "   Java (mvn) + backend-python + frontend JS + estructura HTML/JS."
+  echo ""
+  local fallos=0
+
+  # --- 1) Backend Java (fuente de verdad): mvn test ---
+  echo "[1/4] Backend Java (Spring Boot + JUnit 5 + Mockito)"
+  if ! command -v mvn >/dev/null 2>&1; then
+    echo "  [X] Maven no encontrado. En Linux: sudo apt install maven" >&2
+    fallos=$((fallos+1))
+  else
+    ( cd "$ROOT/backend-servlets" && mvn test )
+    if [ $? -ne 0 ]; then echo "  [X] Fallaron los tests de Java." >&2; fallos=$((fallos+1))
+    else echo "  [OK] Backend Java."; fi
+  fi
+  echo ""
+
+  # --- 2) Backend Python (replica): unittest ---
+  echo "[2/4] Backend Python (replica Flask, unittest)"
+  if [ -z "$PY" ]; then
+    echo "  [X] Python no encontrado." >&2
+    fallos=$((fallos+1))
+  else
+    # Los tests de API necesitan Flask; si no esta se intenta instalar una vez
+    # (best-effort). Si no se puede, se marcan como 'skipped' y no falla.
+    if ! "$PY" -c "import flask" >/dev/null 2>&1; then
+      echo "  Instalando dependencias de backend-python (Flask)..."
+      "$PY" -m pip install -r "$ROOT/backend-python/requirements.txt" >/dev/null 2>&1 || true
+    fi
+    ( cd "$ROOT" && "$PY" -m unittest discover -s backend-python/tests -t backend-python )
+    if [ $? -ne 0 ]; then echo "  [X] Fallaron los tests de backend-python." >&2; fallos=$((fallos+1))
+    else echo "  [OK] Backend Python."; fi
+  fi
+  echo ""
+
+  # --- 3) Frontend JS: node auth + graficas ---
+  echo "[3/4] Frontend JS (validaciones auth + graficas, node)"
+  if ! command -v node >/dev/null 2>&1; then
+    echo "  [--] node no encontrado; se omiten los tests de JS (no bloquean)." >&2
+  else
+    local js_ok=1 t
+    for t in auth_validation_test.js graficas_test.js; do
+      node "$ROOT/frontend/tests/$t" || { echo "  [X] Fallo $t" >&2; js_ok=0; }
+    done
+    if [ "$js_ok" -eq 1 ]; then echo "  [OK] Frontend JS."; else fallos=$((fallos+1)); fi
+  fi
+  echo ""
+
+  # --- 4) Frontend estructura HTML/JS: unittest ---
+  echo "[4/4] Frontend estructura HTML/JS (unittest)"
+  if [ -z "$PY" ]; then
+    echo "  [X] Python no encontrado." >&2
+    fallos=$((fallos+1))
+  else
+    ( cd "$ROOT" && "$PY" -m unittest discover -s frontend/tests -p 'test_*.py' )
+    if [ $? -ne 0 ]; then echo "  [X] Fallaron los tests de estructura del frontend." >&2; fallos=$((fallos+1))
+    else echo "  [OK] Frontend estructura."; fi
+  fi
+  echo ""
+
+  # --- Resumen ---
+  if [ "$fallos" -eq 0 ]; then
+    echo "== TODAS LAS SUITES PASARON =="
+    exit 0
+  else
+    echo "== $fallos suite(s) fallaron ==" >&2
+    exit 1
+  fi
+}
+
 helpMsg() {
   cat <<EOF
 Uso: ./setup.sh <comando>
@@ -574,11 +657,14 @@ Uso: ./setup.sh <comando>
   check             Verifica java/mvn/mysql/node/python Y la conexion real a MySQL.
                     Es el primer comando: si falla, dice exactamente que falta.
   seed              Carga query.sql (raiz) en la base '$DB_NAME'.
+  test              Ejecuta las 4 suites de pruebas:
+                    Backend Java (mvn test), backend-python (unittest),
+                    frontend JS (node) y estructura HTML/JS (unittest).
   run-backend       Compila y ejecuta Spring Boot en :$PUERTO_API.
   run-backend-fast  Empaqueta el JAR y arranca con 'java -jar'.
                     MUCHO mas rapido (~14s menos) porque se salta Maven.
                     Reempaqueta solo si el codigo cambio.
-  run-frontend      Sirve ./frontend en el puerto $PUERTO_WEB y abre el navegador.
+  run-frontend      Sirve la raiz del proyecto en el puerto $PUERTO_WEB y abre el navegador.
   run               ARRANCA EL PROYECTO COMPLETO: API :$PUERTO_API + sitio :$PUERTO_WEB.
                     El backend queda en segundo plano (log en logs/backend.log) y
                     el sitio en esta terminal. Ctrl+C detiene los dos.
@@ -590,7 +676,7 @@ Arranque habitual en Linux:
   3) ./setup.sh run                 # API + sitio, y abre el navegador
 
 Direccion web:  $(url_web "$PAGINA_INICIO")      <- sin :$PUERTO_WEB, se ve como dominio
-API:            http://$SITIO:$PUERTO_API
+API:            $(url_web "http://$SITIO")        <- sin:$PUERTO_API, se ve como dominio
 
 Usuarios de prueba (clave 123456): kike@tourinvest.com (Administrador),
 marlen@tourinvest.com (Analista), juan@tourinvest.com (Inversionista).
@@ -608,6 +694,7 @@ EOF
 case "${1:-help}" in
   check)            check ;;
   seed)             seed ;;
+  test)             run_tests ;;
   run-backend)      run_backend ;;
   run-backend-fast) run_backend_fast ;;
   run-frontend)     run_frontend ;;

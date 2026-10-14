@@ -13,7 +13,7 @@ public class EmpresaJdbcDemo {
 
         try {
             System.out.println("=== CREATE: Insertando nueva empresa ===");
-            int idNueva = dao.insertarEmpresa("EcoTravel Andina", "Turismo", "Colombia", "ECOA");
+            int idNueva = dao.insertarEmpresa("Hotel Demo Andino", "Hotelería", "Colombia", "DEMO");
             System.out.println("Empresa insertada con id: " + idNueva);
 
             System.out.println("\n=== READ: Listado de empresas ===");
@@ -25,7 +25,7 @@ public class EmpresaJdbcDemo {
             System.out.println(empresaEncontrada != null ? empresaEncontrada : "No encontrada");
 
             System.out.println("\n=== UPDATE: Actualizando empresa recién creada ===");
-            boolean actualizado = dao.actualizarEmpresa(idNueva, "EcoTravel Andina S.A.S.", "Ecoturismo", "Colombia");
+            boolean actualizado = dao.actualizarEmpresa(idNueva, "Hotel Demo Andino S.A.S.", "Hotelería", "Colombia");
             System.out.println("¿Actualización exitosa? " + actualizado);
 
             System.out.println("\n=== DELETE: Eliminando empresa de prueba ===");

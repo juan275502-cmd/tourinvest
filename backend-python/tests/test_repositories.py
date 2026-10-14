@@ -67,7 +67,7 @@ class TestRegistro(unittest.TestCase):
 
 class TestAnalisis(unittest.TestCase):
     def setUp(self):
-        database.USUARIOS_DB[:] = [dict(u) for u in _SNAP_REPORTES]
+        database.REPORTES_DB[:] = [dict(r) for r in _SNAP_REPORTES]
         self.repo = AnalysisRepo()
 
     def test_listar_reportes(self):
@@ -76,8 +76,8 @@ class TestAnalisis(unittest.TestCase):
         self.assertEqual(len(reportes), 2)
 
     def test_crear_analisis_appende(self):
-        nuevo = self.repo.crear_analisis({"titulo": "T", "empresa": "Apple", "fecha": "2026-01-01"})
-        self.assertEqual(nuevo["empresa"], "Apple")
+        nuevo = self.repo.crear_analisis({"titulo": "T", "empresa": "GHL Hoteles", "fecha": "2026-01-01"})
+        self.assertEqual(nuevo["empresa"], "GHL Hoteles")
         self.assertIn(nuevo, database.REPORTES_DB)
 
     def test_crear_analisis_sin_titulo_usar_default(self):

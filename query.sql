@@ -145,18 +145,26 @@ VALUES
 INSERT INTO
     empresas (nombre, sector, pais, simbolo)
 VALUES
-    ('Apple', 'Tecnología', 'Estados Unidos', 'AAPL'),
-    ('Microsoft', 'Tecnología', 'Estados Unidos', 'MSFT'),
-    ('Amazon', 'Comercio', 'Estados Unidos', 'AMZN'),
-    ('Tesla', 'Automotriz', 'Estados Unidos', 'TSLA');
+    ('GHL Hoteles', 'Hotelería', 'Colombia', 'GHL'),
+    ('Decameron', 'Hotelería', 'Colombia', 'DEC'),
+    ('Dann Carlton', 'Hotelería', 'Colombia', 'DAN'),
+    ('Estelar Hoteles', 'Hotelería', 'Colombia', 'EST'),
+    ('Aviatur', 'Agencia de viajes', 'Colombia', 'AVI'),
+    ('Satena', 'Transporte aéreo', 'Colombia', 'SAT'),
+    ('Parque del Café', 'Turismo', 'Colombia', 'PCA'),
+    ('Masaya Hostels', 'Hospedaje', 'Colombia', 'MAS');
 
 INSERT INTO
     acciones (id_empresa, precio, variacion, fecha_actualizacion)
 VALUES
-    (1, 195.50, 1.80, NOW()),
-    (2, 432.15, -0.65, NOW()),
-    (3, 176.40, 0.40, NOW()),
-    (4, 250.80, 3.25, NOW());
+    (1, 4250.00, 1.80, NOW()),
+    (2, 1870.00, -0.65, NOW()),
+    (3, 3120.00, 0.40, NOW()),
+    (4, 2480.00, 3.25, NOW()),
+    (5, 980.00, 0.90, NOW()),
+    (6, 640.00, -1.10, NOW()),
+    (7, 5300.00, 2.40, NOW()),
+    (8, 1150.00, 1.25, NOW());
 
 INSERT INTO
     portafolios (id_usuario, nombre)
@@ -167,21 +175,21 @@ VALUES
 INSERT INTO
     inversiones (id_portafolio, id_accion, cantidad, precio_compra, fecha_compra)
 VALUES
-    (1, 1, 10, 180.00, '2025-03-15'),
-    (1, 2, 5, 410.50, '2025-05-10'),
-    (2, 4, 15, 240.00, '2025-06-18');
+    (1, 1, 10, 4100.00, '2025-03-15'),
+    (1, 2, 5, 1950.00, '2025-05-10'),
+    (2, 4, 15, 2300.00, '2025-06-18');
 
 INSERT INTO
     alertas (id_usuario, id_accion, precio_objetivo)
 VALUES
-    (3, 1, 210),
-    (3, 4, 300);
+    (3, 1, 4600),
+    (3, 4, 2800);
 
 INSERT INTO
     reportes (id_usuario, id_empresa, titulo, descripcion)
 VALUES
-    (2, 1, 'Reporte Apple', 'La acción presenta tendencia alcista.'),
-    (2, 4, 'Reporte Tesla', 'Incremento de volatilidad.');
+    (2, 1, 'Reporte GHL Hoteles', 'La cadena reporta ocupación sostenida en Bogotá y el Caribe colombiano.'),
+    (2, 4, 'Reporte Estelar Hoteles', 'Expansión de su portafolio hotelero en el Valle del Cauca.');
 
 -- =========================================================
 -- CONSULTAS DE VERIFICACIÓN
@@ -193,14 +201,14 @@ SELECT * FROM acciones;
 
 SELECT * FROM empresas ORDER BY nombre;
 
-SELECT * FROM empresas WHERE sector = 'Tecnología';
+SELECT * FROM empresas WHERE sector = 'Hotelería';
 
 SELECT usuarios.*, roles.nombre AS rol
 FROM usuarios
 INNER JOIN roles ON usuarios.id_rol = roles.id_rol
 WHERE roles.nombre = 'Administrador';
 
-SELECT * FROM empresas WHERE pais = 'Estados Unidos';
+SELECT * FROM empresas WHERE pais = 'Colombia';
 
 SELECT empresas.nombre, acciones.precio, acciones.variacion
 FROM acciones
@@ -234,9 +242,9 @@ FROM inversiones;
 -- hacia fallar las pruebas de Postman y el arranque de la app. Aqui el seed
 -- queda LIMPIO: tras ejecutarlo, los 3 usuarios de prueba estan disponibles.
 
-SELECT * FROM empresas WHERE nombre LIKE '%Apple%';
+SELECT * FROM empresas WHERE nombre LIKE '%GHL%';
 SELECT * FROM usuarios WHERE nombre1 LIKE '%Juan%';
-SELECT * FROM empresas WHERE simbolo = 'AAPL';
+SELECT * FROM empresas WHERE simbolo = 'GHL';
 
 SELECT sector, COUNT(*) FROM empresas GROUP BY sector;
 

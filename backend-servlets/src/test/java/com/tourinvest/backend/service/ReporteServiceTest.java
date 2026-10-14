@@ -38,7 +38,7 @@ class ReporteServiceTest {
     private ReporteService reporteService;
 
     private Usuario analista;
-    private Empresa apple;
+    private Empresa ghl;
 
     @BeforeEach
     void setUp() {
@@ -52,12 +52,12 @@ class ReporteServiceTest {
         analista.setNombre1("Laura");
         analista.setRol(rolAnalista);
 
-        apple = new Empresa();
-        apple.setIdEmpresa(1);
-        apple.setNombre("Apple");
-        apple.setSimbolo("AAPL");
-        apple.setSector("Tecnología");
-        apple.setPais("Estados Unidos");
+        ghl = new Empresa();
+        ghl.setIdEmpresa(1);
+        ghl.setNombre("GHL Hoteles");
+        ghl.setSimbolo("GHL");
+        ghl.setSector("Hotelería");
+        ghl.setPais("Colombia");
     }
 
     // ---------- CREAR ----------
@@ -70,7 +70,7 @@ class ReporteServiceTest {
         request.setTitulo("Análisis de liquidez Q3");
         request.setDescripcion("La empresa presenta buena salud financiera.");
 
-        when(empresaRepository.findById(1)).thenReturn(Optional.of(apple));
+        when(empresaRepository.findById(1)).thenReturn(Optional.of(ghl));
         when(reporteRepository.save(any(Reporte.class))).thenAnswer(invocation -> {
             Reporte r = invocation.getArgument(0);
             r.setIdReporte(10);
@@ -81,7 +81,7 @@ class ReporteServiceTest {
 
         assertThat(resultado.getIdReporte()).isEqualTo(10);
         assertThat(resultado.getTitulo()).isEqualTo("Análisis de liquidez Q3");
-        assertThat(resultado.getNombreEmpresa()).isEqualTo("Apple");
+        assertThat(resultado.getNombreEmpresa()).isEqualTo("GHL Hoteles");
         assertThat(resultado.getAutor()).isEqualTo("Laura");
 
         verify(reporteRepository).save(any(Reporte.class));
@@ -109,8 +109,8 @@ class ReporteServiceTest {
         Reporte reporte = new Reporte();
         reporte.setIdReporte(1);
         reporte.setUsuario(analista);
-        reporte.setEmpresa(apple);
-        reporte.setTitulo("Reporte Apple");
+        reporte.setEmpresa(ghl);
+        reporte.setTitulo("Reporte GHL Hoteles");
         reporte.setDescripcion("Tendencia alcista.");
 
         when(reporteRepository.findAllConEmpresaYUsuario()).thenReturn(List.of(reporte));
@@ -118,7 +118,7 @@ class ReporteServiceTest {
         List<ReporteResumenDTO> resultado = reporteService.listarTodos();
 
         assertThat(resultado).hasSize(1);
-        assertThat(resultado.get(0).getNombreEmpresa()).isEqualTo("Apple");
+        assertThat(resultado.get(0).getNombreEmpresa()).isEqualTo("GHL Hoteles");
         assertThat(resultado.get(0).getAutor()).isEqualTo("Laura");
     }
 

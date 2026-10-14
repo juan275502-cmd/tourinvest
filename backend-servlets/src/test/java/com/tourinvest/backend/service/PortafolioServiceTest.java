@@ -61,8 +61,8 @@ class PortafolioServiceTest {
         empresa.setIdEmpresa(1);
         empresa.setNombre(nombreEmpresa);
         empresa.setSimbolo(simbolo);
-        empresa.setSector("Tecnología");
-        empresa.setPais("Estados Unidos");
+        empresa.setSector("Hotelería");
+        empresa.setPais("Colombia");
 
         Accion accion = new Accion();
         accion.setIdAccion(1);
@@ -86,8 +86,8 @@ class PortafolioServiceTest {
     @DisplayName("obtenerResumen: con inversiones activas, calcula valor total, invertido y rendimiento correctamente")
     void obtenerResumen_conInversiones_calculaTotalesCorrectamente() {
         // Compra: 10 acciones a $180 = $1800 invertidos. Precio actual: $195.50 -> valor actual $1955
-        Accion apple = crearAccion("AAPL", "Apple", "195.50");
-        Inversion inversion = crearInversion(apple, 10, "180.00");
+        Accion ghl = crearAccion("GHL", "GHL Hoteles", "195.50");
+        Inversion inversion = crearInversion(ghl, 10, "180.00");
 
         when(inversionRepository.findByUsuario(3)).thenReturn(List.of(inversion));
         when(alertaRepository.findByUsuario_IdUsuarioAndEstado(3, Alerta.EstadoAlerta.Activa))
@@ -102,7 +102,7 @@ class PortafolioServiceTest {
         assertThat(resumen.getRendimientoTotalPorcentual()).isEqualByComparingTo("8.6111");
 
         assertThat(resumen.getPosiciones()).hasSize(1);
-        assertThat(resumen.getPosiciones().get(0).getSimbolo()).isEqualTo("AAPL");
+        assertThat(resumen.getPosiciones().get(0).getSimbolo()).isEqualTo("GHL");
         assertThat(resumen.getPosiciones().get(0).getValorActual()).isEqualByComparingTo("1955.00");
     }
 
@@ -124,12 +124,12 @@ class PortafolioServiceTest {
     @Test
     @DisplayName("obtenerResumen: mapea correctamente las alertas activas del usuario")
     void obtenerResumen_conAlertasActivas_lasIncluyeEnLaRespuesta() {
-        Accion tesla = crearAccion("TSLA", "Tesla", "250.80");
+        Accion dec = crearAccion("DEC", "Decameron", "250.80");
 
         Alerta alerta = new Alerta();
         alerta.setIdAlerta(7);
         alerta.setUsuario(usuario);
-        alerta.setAccion(tesla);
+        alerta.setAccion(dec);
         alerta.setPrecioObjetivo(new BigDecimal("300.00"));
         alerta.setEstado(Alerta.EstadoAlerta.Activa);
 
@@ -140,7 +140,7 @@ class PortafolioServiceTest {
         ResumenPortafolioResponse resumen = portafolioService.obtenerResumen(usuario);
 
         assertThat(resumen.getAlertasActivas()).hasSize(1);
-        assertThat(resumen.getAlertasActivas().get(0).getSimbolo()).isEqualTo("TSLA");
+        assertThat(resumen.getAlertasActivas().get(0).getSimbolo()).isEqualTo("DEC");
         assertThat(resumen.getAlertasActivas().get(0).getPrecioObjetivo()).isEqualByComparingTo("300.00");
         assertThat(resumen.getAlertasActivas().get(0).getPrecioActual()).isEqualByComparingTo("250.80");
         assertThat(resumen.getAlertasActivas().get(0).getEstado()).isEqualTo("Activa");
@@ -149,11 +149,11 @@ class PortafolioServiceTest {
     @Test
     @DisplayName("obtenerResumen: con múltiples posiciones, suma correctamente cada una al total")
     void obtenerResumen_conMultiplesPosiciones_sumaCorrectamente() {
-        Accion apple = crearAccion("AAPL", "Apple", "200.00");
-        Accion tesla = crearAccion("TSLA", "Tesla", "250.00");
+        Accion ghl = crearAccion("GHL", "GHL Hoteles", "200.00");
+        Accion dec = crearAccion("DEC", "Decameron", "250.00");
 
-        Inversion inv1 = crearInversion(apple, 10, "180.00"); // valor actual: 2000
-        Inversion inv2 = crearInversion(tesla, 5, "260.00");  // valor actual: 1250 (pérdida)
+        Inversion inv1 = crearInversion(ghl, 10, "180.00"); // valor actual: 2000
+        Inversion inv2 = crearInversion(dec, 5, "260.00");  // valor actual: 1250 (pérdida)
 
         when(inversionRepository.findByUsuario(3)).thenReturn(List.of(inv1, inv2));
         when(alertaRepository.findByUsuario_IdUsuarioAndEstado(3, Alerta.EstadoAlerta.Activa))
@@ -171,7 +171,7 @@ class PortafolioServiceTest {
     @Test
     @DisplayName("agregarInversion: con portafolio existente, usa ese portafolio y toma el precio de mercado actual")
     void agregarInversion_conPortafolioExistente_usaElPrimeroYPrecioDeMercado() {
-        Accion apple = crearAccion("AAPL", "Apple", "195.50");
+        Accion ghl = crearAccion("GHL", "GHL Hoteles", "195.50");
         com.tourinvest.backend.dto.InversionRequest request = new com.tourinvest.backend.dto.InversionRequest();
         request.setIdAccion(1);
         request.setCantidad(10);
@@ -182,13 +182,13 @@ class PortafolioServiceTest {
         portafolioExistente.setNombre("Portafolio Principal");
 
         when(portafolioRepository.findByUsuario_IdUsuario(3)).thenReturn(List.of(portafolioExistente));
-        when(accionRepository.findById(1)).thenReturn(java.util.Optional.of(apple));
+        when(accionRepository.findById(1)).thenReturn(java.util.Optional.of(ghl));
         when(inversionRepository.save(org.mockito.ArgumentMatchers.any(Inversion.class)))
                 .thenAnswer(inv -> inv.getArgument(0));
 
         var posicion = portafolioService.agregarInversion(usuario, request);
 
-        assertThat(posicion.getSimbolo()).isEqualTo("AAPL");
+        assertThat(posicion.getSimbolo()).isEqualTo("GHL");
         assertThat(posicion.getCantidad()).isEqualTo(10);
         // El precio de compra debe ser el precio de MERCADO actual, no uno inventado por el cliente
         assertThat(posicion.getPrecioCompra()).isEqualByComparingTo("195.50");
@@ -199,7 +199,7 @@ class PortafolioServiceTest {
     @Test
     @DisplayName("agregarInversion: sin portafolio previo, crea uno por defecto llamado 'Portafolio Principal'")
     void agregarInversion_sinPortafolioPrevio_creaPortafolioPorDefecto() {
-        Accion tesla = crearAccion("TSLA", "Tesla", "250.80");
+        Accion dec = crearAccion("DEC", "Decameron", "250.80");
         com.tourinvest.backend.dto.InversionRequest request = new com.tourinvest.backend.dto.InversionRequest();
         request.setIdAccion(1);
         request.setCantidad(3);
@@ -211,13 +211,13 @@ class PortafolioServiceTest {
 
         when(portafolioRepository.findByUsuario_IdUsuario(3)).thenReturn(List.of());
         when(portafolioRepository.save(org.mockito.ArgumentMatchers.any(Portafolio.class))).thenReturn(portafolioCreado);
-        when(accionRepository.findById(1)).thenReturn(java.util.Optional.of(tesla));
+        when(accionRepository.findById(1)).thenReturn(java.util.Optional.of(dec));
         when(inversionRepository.save(org.mockito.ArgumentMatchers.any(Inversion.class)))
                 .thenAnswer(inv -> inv.getArgument(0));
 
         var posicion = portafolioService.agregarInversion(usuario, request);
 
-        assertThat(posicion.getSimbolo()).isEqualTo("TSLA");
+        assertThat(posicion.getSimbolo()).isEqualTo("DEC");
         org.mockito.Mockito.verify(portafolioRepository).save(org.mockito.ArgumentMatchers.argThat(
                 p -> p.getNombre().equals("Portafolio Principal") && p.getUsuario().equals(usuario)));
     }

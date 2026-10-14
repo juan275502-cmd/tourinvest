@@ -34,7 +34,7 @@ window.TourInvestUI.Api = (function () {
   }
 
   function moneda(valor) {
-    return new Intl.NumberFormat("es-CO", { style: "currency", currency: "USD", minimumFractionDigits: 2 }).format(valor);
+    return new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(valor);
   }
 
   function porcentaje(valor) {

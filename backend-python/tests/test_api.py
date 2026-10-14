@@ -102,7 +102,7 @@ class TestApi(unittest.TestCase):
 
     def test_crear_reporte_ok(self):
         r = self.client.post("/api/analysis/reportes", json={
-            "titulo": "T1", "empresa": "Apple", "fecha": "2026-01-01",
+            "titulo": "T1", "empresa": "GHL Hoteles", "fecha": "2026-01-01",
         })
         self.assertEqual(r.status_code, 201)
         self.assertTrue(r.get_json()["ok"])

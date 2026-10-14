@@ -210,8 +210,16 @@ select:focus {
   padding: 24px 0;
   display: flex;
   flex-direction: column;
+  /* Siempre fijo: no se mueve al hacer scroll ni depende del alto del panel. */
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
 }
 
+/* Brand del sidebar: 3 zonas — logo a la izquierda, nombre en el medio
+   (ocupa el espacio libre) y el ÚNICO botón ☰ a la derecha, siempre visible
+   (también plegado y en móvil). */
 .sidebar .brand {
   display: flex;
   align-items: center;
@@ -221,16 +229,40 @@ select:focus {
   margin-bottom: 12px;
 }
 
-.sidebar .brand .logo-circle {
+.sidebar .brand__logo {
+  flex-shrink: 0;
+  line-height: 0;
+}
+
+.sidebar .brand__logo .logo-circle {
   width: 48px;
   height: 48px;
   border-radius: 50%;
   background: var(--blanco);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
+  object-fit: cover;
+  display: block;
 }
+
+.sidebar .brand__name {
+  flex: 1;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* La hamburguesa vive DENTRO del brand, a la derecha de la marca. */
+.sidebar .brand .sidebar-toggle {
+  margin-left: auto;
+  border-color: rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--blanco);
+  width: 36px;
+  height: 36px;
+  font-size: 16px;
+}
+
+.sidebar .brand .sidebar-toggle:hover { background: rgba(255, 255, 255, 0.18); }
 
 .sidebar .brand span {
   font-weight: 600;
@@ -381,6 +413,23 @@ section.panel {
   align-items: center;
   gap: 12px;
   user-select: none;
+  /* Es un <button>: se quita el fondo/borde del navegador, porque con el
+     fondo gris por defecto la letra no se ve (ni en diurno ni en nocturno). */
+  background: transparent;
+  border: none;
+  padding: 4px 6px;
+  border-radius: 10px;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.top-header__brand:hover {
+  background: rgba(30, 58, 95, 0.06);
+}
+
+html[data-theme="nocturno"] .top-header__brand:hover {
+  background: rgba(220, 230, 238, 0.08);
 }
 
 .top-header__logo {
@@ -688,10 +737,6 @@ th {
 
 /* Responsive design - adaptable a smartphones, tablets y distintas resoluciones */
 @media (max-width: 900px) {
-  .app-layout {
-    flex-direction: column;
-  }
-
   .main-content {
     padding: 18px 20px 24px 20px;
   }
@@ -700,38 +745,140 @@ th {
     padding: 12px 14px;
   }
 
-
+  /* En móvil hay UN SOLO botón (el del .brand del aside). El sidebar es una
+     BARRA SUPERIOR fija: solo logo + nombre + ☰. Al pulsar ☰ se despliega
+     hacia abajo con el menú completo; no ocupa el lateral. */
+  .app-layout {
+    flex-direction: column;
+  }
 
   .sidebar {
-    width: 100%;
+    position: sticky;
+    top: 0;
+    left: auto;
+    width: 100% !important;
+    height: auto;
+    max-height: 100dvh;
+    overflow-y: auto;
+    z-index: 1000;
+    padding: 12px 0 0 !important;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.30);
+    transition: none;
+  }
+
+  /* La preferencia de escritorio (colapsado) no aplica en móvil. */
+  .sidebar--colapsado {
+    width: 100% !important;
+    padding: 12px 0 0 !important;
+  }
+
+  .sidebar .brand,
+  .sidebar--colapsado .brand {
     flex-direction: row;
-    overflow-x: auto;
-    padding: 12px;
+    align-items: center;
+    padding: 0 16px 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+    margin-bottom: 0;
+    gap: 10px;
   }
 
-  .sidebar .brand {
-    border: none;
+  .sidebar .brand__logo,
+  .sidebar--colapsado .brand__logo {
+    order: 0;
+  }
+
+  .sidebar .brand__logo .logo-circle,
+  .sidebar--colapsado .brand__logo .logo-circle {
+    width: 38px;
+    height: 38px;
+  }
+
+  .sidebar .brand__name,
+  .sidebar--colapsado .brand__name {
+    display: block !important;
+    flex: 1;
+    font-size: 15px;
+  }
+
+  .sidebar .logout,
+  .sidebar--colapsado .logout {
+    display: none !important;
+  }
+
+  .sidebar .brand .sidebar-toggle,
+  .sidebar--colapsado .brand .sidebar-toggle {
+    margin-left: auto;
+  }
+
+  /* Menú cerrado por defecto: no ocupa espacio vertical. */
+  .sidebar nav,
+  .sidebar--colapsado nav {
+    display: none !important;
+  }
+
+  /* Menú abierto: CÍRCULOS con la inicial (igual que el plegado de PC),
+     en fila con wrap bajo la barra. No ocupa el lateral. */
+  .sidebar.sidebar--movil-abierto {
+    width: 100% !important;    
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+  }
+
+  .sidebar.sidebar--movil-abierto nav,
+  .sidebar--colapsado.sidebar--movil-abierto nav {
+    display: flex !important;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 12px 2px;
+    margin-top: 12px;
+  }
+
+  .sidebar.sidebar--movil-abierto nav a,
+  .sidebar--colapsado.sidebar--movil-abierto nav a {
+    /* Mismo círculo del plegado de escritorio: 44px, inicial centrada en
+       ::after (ver .sidebar--colapsado nav a). */
+    width: 44px;
+    height: 44px;
+    padding: 0 !important;
     margin: 0;
-    padding: 0 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    border-left: none !important;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.08);
+    font-size: 0; /* oculta el texto; la inicial va en ::after */
+    line-height: 1;
   }
 
-  .sidebar nav {
-    display: flex;
+  .sidebar.sidebar--movil-abierto nav a::after,
+  .sidebar--colapsado.sidebar--movil-abierto nav a::after {
+    content: attr(data-inicial);
+    display: block;
+    font-size: 15px;
+    line-height: 1;
+    font-weight: 800;
+    color: var(--blanco);
   }
 
-  .sidebar nav a {
-    border-left: none;
-    border-bottom: 3px solid transparent;
-    white-space: nowrap;
+  .sidebar.sidebar--movil-abierto nav a:hover,
+  .sidebar.sidebar--movil-abierto nav a.sidebar__link--activo {
+    background: var(--verde);
   }
 
-  .sidebar nav a.active,
-  .sidebar nav a:hover {
-    border-bottom-color: var(--verde);
+  .sidebar.sidebar--movil-abierto .logout {
+    display: block !important;
+    margin-top: 4px;
+    padding: 10px 20px 6px;
+    text-align: center;
   }
 
-  .sidebar .logout {
-    display: none;
+  /* Sin overlay en móvil: el menú empuja el contenido, no lo tapa. */
+  .sidebar-overlay {
+    display: none !important;
   }
 
   .home-hero {
@@ -741,6 +888,75 @@ th {
 
   .home-hero__image {
     width: min(220px, 100%);
+  }
+
+  /* ---- Responsive global (todas las páginas) ---- */
+
+  /* Tablas: scroll horizontal en móvil en vez de romper el layout. */
+  .panel,
+  .tabla {
+    max-width: 100%;
+  }
+
+  .tabla,
+  table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  .tabla thead,
+  .tabla tbody,
+  table thead,
+  table tbody {
+    min-width: 560px;
+  }
+
+  /* Cards y paneles: menos relleno y 1 columna efectiva en móvil. */
+  .cards-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .panel {
+    padding: 16px;
+  }
+
+  .card .value {
+    font-size: 22px;
+  }
+
+  /* Top-header: el chip de usuario y el logout se compactan. */
+  .top-header__inner {
+    flex-wrap: wrap;
+  }
+
+  .top-header__right {
+    flex-wrap: wrap;
+  }
+
+  .user-chip {
+    max-width: 100%;
+  }
+
+  /* Formularios: campos a ancho completo. */
+  .dashboard-form {
+    max-width: 100%;
+  }
+
+  /* Modales y toasts: respiran en pantallas estrechas. */
+  .modal__card {
+    width: calc(100% - 24px);
+  }
+
+  .toast {
+    left: 12px;
+    right: 12px;
+    min-width: 0;
+  }
+
+  /* Tabs con scroll ya existe (.tabs-row); se asegura el alto táctil. */
+  .tab-btn {
+    min-height: 44px;
   }
 }
 
@@ -1209,3 +1425,434 @@ th {
   font-weight: 600;
   font-size: 13px;
 }
+
+/* ---------- Contexto de Colombia (API api-colombia.com) ----------
+   Bloque que se pinta dentro del modal de detalle de empresa del
+   inversionista: región, población y atracciones turísticas reales
+   del departamento asociado a la empresa. */
+.colombia {
+  margin-top: 16px;
+  padding: 14px 16px;
+  border: 1px solid var(--border, rgba(28, 43, 28, 0.12));
+  border-radius: var(--radius, 10px);
+  background: var(--gris-claro, #F2F4F7);
+}
+.colombia__titulo {
+  margin: 0 0 10px;
+  font-size: 15px;
+  color: var(--azul-oscuro, #1E3A5F);
+}
+.colombia__datos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  font-size: 13px;
+  color: var(--texto-secundario, #5A6B7B);
+}
+.colombia__datos strong {
+  color: var(--azul-oscuro, #1E3A5F);
+}
+.colombia__desc {
+  margin: 10px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.colombia__atracciones {
+  margin-top: 14px;
+}
+.colombia__atracciones h5 {
+  margin: 0 0 8px;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--azul-oscuro, #1E3A5F);
+}
+.colombia__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+}
+.colombia-atraccion {
+  margin: 0;
+  background: #fff;
+  border: 1px solid var(--border, rgba(28, 43, 28, 0.12));
+  border-radius: var(--radius, 10px);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.colombia-atraccion__img {
+  width: 100%;
+  height: 84px;
+  object-fit: cover;
+  display: block;
+}
+.colombia-atraccion figcaption {
+  padding: 8px 10px;
+  font-size: 12px;
+}
+.colombia-atraccion figcaption strong {
+  display: block;
+  color: var(--azul-oscuro, #1E3A5F);
+  margin-bottom: 2px;
+}
+.colombia-atraccion figcaption p {
+  margin: 4px 0 0;
+  line-height: 1.4;
+}
+.colombia-cargando,
+.colombia-vacio {
+  margin-top: 14px;
+  font-size: 13px;
+  color: var(--texto-secundario, #5A6B7B);
+  font-style: italic;
+}
+
+/* =========================================================
+   Tema nocturno (html[data-theme="nocturno"])
+   Solo se sobrescriben los tokens y superficies; la
+   estructura de layout es la misma que en tema diurno.
+   ========================================================= */
+
+html[data-theme="nocturno"] {
+  /* REGLA: --blanco y --azul-oscuro son MARCA y tambien color de TEXTO
+     (titulos, botones, puntos de grafica...). NO se cambian: si se ponen
+     oscuros, la letra queda invisible. Solo se oscurecen los FONDOS de
+     superficies y se aclara el texto por componente, en las reglas de abajo. */
+  --gris-claro: #0B1219;   /* fondo de pagina */
+  --gris-texto: #C7D5E1;   /* texto base sobre oscuro */
+  --rojo-error: #E7776A;
+  --verde: #3DAE72;
+  --texto-secundario: #93A4B3;
+  --border: rgba(220, 230, 238, 0.12);
+
+  --background: #0B1219;
+  --foreground: #DCE6EE;
+  --card: #16202B;         /* tarjetas/paneles/modal */
+  --primary: #2F8F5B;
+  --secondary: #1D2A36;
+  --muted: #1D2A36;
+  --accent: #C9A64B;
+  --destructive: #e5484d;
+}
+
+html[data-theme="nocturno"] body { background: var(--gris-claro); color: var(--gris-texto); }
+
+html[data-theme="nocturno"] a { color: #7FB3E0; }
+
+/* ---- Superficies: fondo oscuro + texto claro ---- */
+html[data-theme="nocturno"] .card,
+html[data-theme="nocturno"] .panel,
+html[data-theme="nocturno"] section.panel,
+html[data-theme="nocturno"] .modal__card,
+html[data-theme="nocturno"] table,
+html[data-theme="nocturno"] .tarjeta,
+html[data-theme="nocturno"] .grafica-selector__boton,
+html[data-theme="nocturno"] .user-chip,
+html[data-theme="nocturno"] input[type="text"],
+html[data-theme="nocturno"] input[type="email"],
+html[data-theme="nocturno"] input[type="password"],
+html[data-theme="nocturno"] input[type="date"],
+html[data-theme="nocturno"] input[type="number"],
+html[data-theme="nocturno"] select,
+html[data-theme="nocturno"] textarea {
+  background: var(--card);
+  color: var(--gris-texto);
+  border-color: rgba(220, 230, 238, 0.12);
+}
+
+/* ---- Títulos y etiquetas (en diurno usan --azul-oscuro = fondo oscuro sobre
+   fondo claro; en nocturno deben ser CLAROS sobre fondo oscuro) ---- */
+html[data-theme="nocturno"] .panel h3,
+html[data-theme="nocturno"] .card .value,
+html[data-theme="nocturno"] .modal__header h3,
+html[data-theme="nocturno"] .grafica__titulo,
+html[data-theme="nocturno"] .topbar h2,
+html[data-theme="nocturno"] .user-chip .user-name,
+html[data-theme="nocturno"] .celda-simbolo,
+html[data-theme="nocturno"] label,
+html[data-theme="nocturno"] .grafica__valor,
+html[data-theme="nocturno"] .role-badge--admin,
+html[data-theme="nocturno"] .grafica-selector__boton:hover {
+  color: #E8F0F7;
+}
+
+html[data-theme="nocturno"] .card h3,
+html[data-theme="nocturno"] th,
+html[data-theme="nocturno"] .tarjeta__etiqueta,
+html[data-theme="nocturno"] .tabla th,
+html[data-theme="nocturno"] .grafica__etiqueta {
+  color: #9AAABB;
+}
+html[data-theme="nocturno"] .grafica__etiqueta { fill: #9AAABB; }
+html[data-theme="nocturno"] .grafica__valor { fill: #E8F0F7; }
+
+/* Barras/líneas/ejes del SVG: el azul de marca (#1E3A5F) es invisible sobre
+   el fondo nocturno, así que se aclara solo en ese tema. */
+html[data-theme="nocturno"] .grafica__barra { fill: #6EA8D8; }
+html[data-theme="nocturno"] .grafica__barra--negativa { fill: #E7776A; }
+html[data-theme="nocturno"] .grafica__barra--positiva { fill: #3DAE72; }
+html[data-theme="nocturno"] .grafica__linea { stroke: #6EA8D8; }
+html[data-theme="nocturno"] .grafica__punto { fill: #0B1219; stroke: #6EA8D8; }
+html[data-theme="nocturno"] .grafica__area { fill: #6EA8D8; }
+html[data-theme="nocturno"] .grafica__eje { stroke: rgba(220, 230, 238, 0.20); }
+html[data-theme="nocturno"] .grafica-selector__boton[aria-pressed="true"] {
+  background: #6EA8D8; border-color: #6EA8D8; color: #0B1219;
+}
+
+/* Celdas: texto claro + separador tenue */
+html[data-theme="nocturno"] th,
+html[data-theme="nocturno"] td { border-bottom-color: rgba(220, 230, 238, 0.08); }
+html[data-theme="nocturno"] td { color: #C7D5E1; }
+html[data-theme="nocturno"] tr:nth-child(even) td { background: rgba(220, 230, 238, 0.03); }
+
+/* Topbar */
+html[data-theme="nocturno"] .top-header {
+  background: rgba(11, 18, 25, 0.92);
+  border-bottom-color: rgba(220, 230, 238, 0.10);
+}
+html[data-theme="nocturno"] .top-header__titles h1 { color: #DCE6EE; }
+html[data-theme="nocturno"] .top-header__titles p { color: rgba(220, 230, 238, 0.55); }
+html[data-theme="nocturno"] .top-header__logo { background: #1D2A36; }
+html[data-theme="nocturno"] .top-header__logout {
+  background: rgba(220, 230, 238, 0.06);
+  color: #DCE6EE;
+  border-color: rgba(220, 230, 238, 0.14);
+}
+html[data-theme="nocturno"] .top-header__logout:hover {
+  background: rgba(61, 174, 114, 0.14);
+  border-color: rgba(61, 174, 114, 0.35);
+}
+
+/* Tabs y botones secundarios */
+html[data-theme="nocturno"] .tabs-row { background: rgba(22, 32, 43, 0.6); }
+html[data-theme="nocturno"] .tab-btn {
+  background: rgba(220, 230, 238, 0.05);
+  color: #DCE6EE;
+  border-color: rgba(220, 230, 238, 0.14);
+}
+html[data-theme="nocturno"] .theme-admin .tab-btn--active,
+html[data-theme="nocturno"] .theme-analista .tab-btn--active,
+html[data-theme="nocturno"] .theme-inversionista .tab-btn--active {
+  color: #E8F0F7;
+  background: rgba(110, 168, 216, 0.14);
+}
+
+/* Estados (mensajes y pills) */
+html[data-theme="nocturno"] .mensaje-global--error,
+html[data-theme="nocturno"] .error-msg,
+html[data-theme="nocturno"] .boton-fila--cancelar:hover { background: rgba(231, 119, 106, 0.14); color: #E7776A; }
+html[data-theme="nocturno"] .mensaje-global--exito,
+html[data-theme="nocturno"] .help-msg { background: rgba(61, 174, 114, 0.14); color: #3DAE72; }
+
+/* Sidebar: ya es oscuro; solo se matiza el brand en nocturno */
+html[data-theme="nocturno"] .sidebar .brand .logo-circle { background: #EDE8DC; }
+
+/* =========================================================
+   Sidebar plegable (botón hamburguesa del topbar)
+   ========================================================= */
+
+.sidebar-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid rgba(30, 58, 95, 0.14);
+  background: rgba(30, 58, 95, 0.05);
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 18px;
+  color: var(--azul-oscuro);
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+
+.sidebar-toggle:hover { background: rgba(46, 139, 87, 0.12); }
+
+html[data-theme="nocturno"] .sidebar-toggle {
+  background: rgba(220, 230, 238, 0.06);
+  border-color: rgba(220, 230, 238, 0.14);
+  color: #DCE6EE;
+}
+
+/* (regla genérica movida junto al .brand: ver ".sidebar .brand .sidebar-toggle") */
+/* Sidebar plegado: franja de 76px con el LOGO ARRIBA (siempre visible),
+   luego el botón ☰ y debajo los círculos de iniciales. El nombre se oculta,
+   pero el logo y el botón quedan encima del menú como se pide. */
+.sidebar--colapsado {
+  width: 76px !important;
+  padding: 16px 0 !important;
+}
+
+.sidebar--colapsado .brand {
+  flex-direction: column;
+  align-items: center;
+  padding: 0 0 12px;
+  border-bottom: none;
+  margin-bottom: 4px;
+  gap: 10px;
+}
+
+.sidebar--colapsado .brand__logo {
+  order: -1;
+}
+
+.sidebar--colapsado .brand__logo .logo-circle {
+  width: 40px;
+  height: 40px;
+}
+
+.sidebar--colapsado .brand__name,
+.sidebar--colapsado .logout {
+  display: none !important;
+}
+
+/* Plegado: el nav NO se oculta; cada enlace se convierte en un círculo con su
+   inicial (o las 2 letras si la inicial está repetida, p. ej. "Co").
+   La inicial la pone el JS (data-inicial); el tooltip muestra el nombre. */
+.sidebar--colapsado nav {
+  display: flex !important;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 0 8px;
+}
+
+.sidebar--colapsado nav a {
+  width: 44px;
+  height: 44px;
+  padding: 0 !important;
+  margin: 0;
+  /* Centrado real de la inicial: la regla base trae gap:10px para icono+texto
+     que aquí desplazaba el ::after; se anula y se centra en ambos ejes. */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  border-left: none !important;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 0; /* oculta el texto; la inicial va en ::after */
+  line-height: 1;
+}
+
+.sidebar--colapsado nav a::after {
+  content: attr(data-inicial);
+  display: block;
+  font-size: 15px;
+  line-height: 1;
+  font-weight: 800;
+  color: var(--blanco);
+}
+
+.sidebar--colapsado nav a:hover,
+.sidebar--colapsado nav a.sidebar__link--activo {
+  background: var(--verde);
+}
+
+.sidebar--colapsado .brand .sidebar-toggle {
+  margin: 0;
+}
+
+/* Compatibilidad: estado anterior que lo ocultaba por completo. */
+.sidebar--oculta { display: none !important; }
+
+.top-header__inner--con-toggle { justify-content: flex-start; }
+.top-header__inner--con-toggle .top-header__right { margin-left: auto; }
+
+/* Botones de fila/tabla y genéricos: heredan negro del navegador si no se les
+   fija color; en nocturno la tarjeta es oscura y la letra no se veía. */
+.boton-fila { color: var(--azul-oscuro); }
+
+html[data-theme="nocturno"] .boton-fila { color: #DCE6EE; border-color: rgba(220, 230, 238, 0.25); }
+html[data-theme="nocturno"] .boton-fila:hover { background: rgba(220, 230, 238, 0.08); }
+html[data-theme="nocturno"] .boton-fila--cancelar { color: #E7776A; border-color: #E7776A; }
+html[data-theme="nocturno"] .boton-fila--cancelar:hover { background: rgba(231, 119, 106, 0.14); }
+
+html[data-theme="nocturno"] .btn {
+  background: rgba(220, 230, 238, 0.06);
+  border-color: rgba(220, 230, 238, 0.20);
+  color: #DCE6EE;
+}
+html[data-theme="nocturno"] .btn:hover { background: rgba(220, 230, 238, 0.12); }
+
+html[data-theme="nocturno"] .btn-link { color: #7FB3E0; }
+
+/* =========================================================
+   Vista Configuración: selector de tema + accesos legales
+   ========================================================= */
+
+.tema-selector {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 10px 0 4px;
+}
+
+.tema-btn {
+  border: 1px solid rgba(30, 58, 95, 0.16);
+  background: rgba(30, 58, 95, 0.04);
+  color: var(--azul-oscuro);
+  padding: 9px 14px;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.tema-btn:hover { background: rgba(46, 139, 87, 0.12); }
+
+.tema-btn--activo {
+  background: var(--verde);
+  border-color: var(--verde);
+  color: #fff;
+}
+
+html[data-theme="nocturno"] .tema-btn {
+  background: rgba(220, 230, 238, 0.06);
+  border-color: rgba(220, 230, 238, 0.14);
+  color: #DCE6EE;
+}
+html[data-theme="nocturno"] .tema-btn--activo {
+  background: var(--verde);
+  border-color: var(--verde);
+  color: #0B1219;
+}
+
+.legales-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.legales-lista button {
+  text-align: left;
+  border: 1px solid rgba(30, 58, 95, 0.12);
+  background: transparent;
+  color: var(--azul-oscuro);
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.legales-lista button:hover { background: rgba(46, 139, 87, 0.08); }
+
+html[data-theme="nocturno"] .legales-lista button {
+  color: #DCE6EE;
+  border-color: rgba(220, 230, 238, 0.14);
+}
+
+.legal-texto {
+  max-height: 320px;
+  overflow-y: auto;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--texto-secundario);
+}
+.legal-texto h4 { color: var(--azul-oscuro); margin: 14px 0 4px; }
+html[data-theme="nocturno"] .legal-texto h4 { color: #9FC0DC; }

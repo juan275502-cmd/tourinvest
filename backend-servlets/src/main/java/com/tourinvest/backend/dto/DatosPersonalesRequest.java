@@ -39,7 +39,7 @@ public abstract class DatosPersonalesRequest {
     private String correo;
 
     public String getNombre1() { return nombre1; }
-    public void setNombre1(public void setNombre1(String nombre1) { this.nombre1 = limpiar(nombre1); }
+    public void setNombre1(String nombre1) { this.nombre1 = limpiar(nombre1); }
 
     public String getApellido1() { return apellido1; }
     public void setApellido1(String apellido1) { this.apellido1 = limpiar(apellido1); }

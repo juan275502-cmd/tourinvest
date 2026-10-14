@@ -1,9 +1,15 @@
 // -----------------------------------------------------------------------------
 // URL canonica de la API.
 //
-// El proyecto usa EXCLUSIVAMENTE `www.tourinvest.com` como nombre publico y
-// `127.0.0.1` como direccion real. El dominio debe estar mapeado a 127.0.0.1
-// en el archivo de hosts del sistema (ver STARTUP.md y `setup.sh check`).
+// El backend Spring Boot corre en el puerto 8080 (`www.tourinvest.com:8080`).
+// OJO: NO omitas el `:8080`. Sin el puerto, el navegador usa el 80, que es el
+// servidor ESTATICO del frontend (serve.py) y solo acepta GET: el POST de
+// login recibe un 501 con cuerpo HTML, `respuesta.json()` falla y se muestra
+// "No fue posible conectar con el servidor". Debe coincidir con api.js,
+// perfil.js y usuarios.js (todos en :8080).
+//
+// El nombre visible `www.tourinvest.com` esta mapeado a `127.0.0.1` en el
+// archivo de hosts del sistema (ver STARTUP.md y `setup.sh check`).
 //
 // Si prefieres trabajar sobre la IP cruda, cambia esta constante por
 // "http://127.0.0.1:8080" (y agrega ese origen a CORS_ALLOWED_ORIGINS).

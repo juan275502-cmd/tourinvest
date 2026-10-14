@@ -8,62 +8,21 @@ const Graficas = window.TourInvestUI.Graficas;
 
 let empresasCache = [];
 
-function obtenerToken() {
-  const token = sessionStorage.getItem("tourinvest_token");
-  if (!token) {
-    window.location.href = "login.html";
-    return null;
-  }
-  return token;
-}
-
-async function llamarApi(ruta, opciones = {}) {
-  const token = obtenerToken();
-  if (!token) return null;
-
-  const respuesta = await fetch(`${API_BASE_URL}${ruta}`, {
-    ...opciones,
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-      ...(opciones.headers || {}),
-    },
-  });
-
-  if (respuesta.status === 401) {
-    sessionStorage.clear();
-    window.location.href = "login.html";
-    return null;
-  }
-
-  return respuesta;
-}
-
-function formatearMoneda(valor) {
-  return new Intl.NumberFormat("es-CO", { style: "currency", currency: "USD", minimumFractionDigits: 2 }).format(valor);
-}
-
-function formatearPorcentaje(valor) {
-  const signo = valor >= 0 ? "+" : "";
-  return `${signo}${Number(valor).toFixed(2)}%`;
-}
+// obtenerToken(), llamarApi(), formatearMoneda() y formatearPorcentaje() NO se
+// redefinen aquí: ya vienen de window.TourInvestUI.Api (js/api.js) mediante el
+// destructuring de arriba. Redeclar 'obtenerToken'/'llamarApi' con el mismo
+// nombre era un SyntaxError que impedía cargar TODO el archivo (panel en blanco,
+// sin usuarios y sin poder cerrar sesión).
 
 // ---------- Navegación entre vistas ----------
 
 function inicializarNavegacion() {
-  const enlaces = document.querySelectorAll(".sidebar__link[data-vista]");
-  const vistas = document.querySelectorAll(".vista[data-vista-panel]");
-
-  enlaces.forEach((enlace) => {
-    enlace.addEventListener("click", () => {
-      const destino = enlace.dataset.vista;
-
-      enlaces.forEach((e) => e.classList.toggle("sidebar__link--activo", e === enlace));
-      vistas.forEach((v) => v.classList.toggle("vista--activa", v.dataset.vistaPanel === destino));
-
-      if (destino === "empresas" && empresasCache.length === 0) cargarEmpresas();
-      if (destino === "reportes") cargarReportes();
-    });
+  // Persistencia del panel activo (hash + localStorage por rol): al refrescar
+  // se restaura el mismo panel; `mostrar` dispara las cargas diferidas.
+  window.TourInvestUI.Navegacion.inicializar((destino) => {
+    if (destino === "empresas" && empresasCache.length === 0) cargarEmpresas();
+    if (destino === "reportes") cargarReportes();
+    if (destino === "colombia") cargarVistaColombia();
   });
 }
 
@@ -221,6 +180,40 @@ async function crearReporte(evento) {
   cargarReportes();
 }
 
+// ---------- KPIs del panel (tarjetas superiores) ----------
+
+// Los valores NO están fijos en el HTML: se calculan desde la API para que el
+// panel refleje datos reales. Si algo falla, se muestra "—".
+async function cargarKpis() {
+  const elEmpresas = document.getElementById("kpi-empresas");
+  const elReportes = document.getElementById("kpi-reportes");
+  const elActivos = document.getElementById("kpi-activos");
+  if (!elEmpresas) return;
+
+  const [respEmpresas, respReportes] = await Promise.all([
+    llamarApi("/empresas"),
+    llamarApi("/analista/reportes"),
+  ]);
+
+  if (respEmpresas && respEmpresas.ok) {
+    const empresas = await respEmpresas.json();
+    elEmpresas.textContent = empresas.length;
+  }
+
+  if (respReportes && respReportes.ok) {
+    const reportes = await respReportes.json();
+    elReportes.textContent = reportes.length;
+
+    // "Análisis en curso": reportes generados en los últimos 30 días.
+    const umbral = Date.now() - 30 * 24 * 60 * 60 * 1000;
+    const recientes = reportes.filter((r) => {
+      const t = new Date(r.fechaGeneracion).getTime();
+      return !Number.isNaN(t) && t >= umbral;
+    }).length;
+    elActivos.textContent = recientes;
+  }
+}
+
 // ---------- Perfil / cierre de sesión ----------
 
 // El perfil ahora se pide a la API (GET /perfil) en vez de solo leer sessionStorage:
@@ -246,5 +239,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   inicializarNavegacion();
   cargarEmpresas();
+  cargarKpis();
   cargarPerfil();
 });

@@ -15,9 +15,10 @@
 .COMANDOS
     .\setup.ps1 check             # verifica java/mvn/mysql/node/python Y la conexion a la BD
     .\setup.ps1 seed              # carga query.sql (raiz) en la BD 'tourinvest'
+    .\setup.ps1 test              # ejecuta TODAS las suites de pruebas (Java, Python, JS)
     .\setup.ps1 run-backend       # compila y arranca Spring Boot (API en :8080)
     .\setup.ps1 run-backend-fast  # empaqueta el JAR y arranca con 'java -jar' (mas rapido)
-    .\setup.ps1 run-frontend      # sirve .\frontend en el puerto 80 y abre el navegador
+    .\setup.ps1 run-frontend      # sirve la raiz del proyecto en el puerto 80 y abre el navegador
     .\setup.ps1 run               # ARRANCA EL PROYECTO COMPLETO (API + sitio)
     .\setup.ps1 help
 
@@ -166,7 +167,7 @@ function Set-TituloVentana([string]$Texto) {
 function Get-UrlWeb([string]$Ruta = "") {
     # Equivalente a url_web() de setup.sh: puerto 80 => URL limpia sin ":80".
     # Normaliza la barra entre el dominio y la pagina: sin slash el navegador
-    # pediria "www.tourinvest.comindex.html" (DNS inexistente) y romperia el
+    # pediria "www.tourinvest.com" (DNS inexistente) y romperia el
     # login con "No fue posible conectar con el servidor".
     $base = "http://$($script:Sitio)"
     if ([int]$script:PuertoWeb -ne 80) { $base += ":$($script:PuertoWeb)" }
@@ -438,10 +439,12 @@ function Show-EstadoBD {
             Write-Host "  [X] MySQL responde pero rechaza la contrasena de '$($script:DbUser)'."
             Write-Host "      Define DB_PASSWORD en el archivo .env de la raiz."
             $script:CheckOk = $false
+            $script:DbOk = $false
         }
     } else {
         Write-Host "  [X] Nada escuchando en $($script:DbHost):$($script:DbPort)"
         $script:CheckOk = $false
+        $script:DbOk = $false
     }
 }
 
@@ -449,6 +452,7 @@ function Show-Check {
     Set-TituloVentana "TourInvest - check"
     Write-Host "== TourInvest - check de requisitos (Windows) ==" -ForegroundColor Cyan
     $script:CheckOk = $true
+    $script:DbOk = $true
 
     $javaCmd = Get-Command java.exe -ErrorAction SilentlyContinue
     if (-not $javaCmd) { $javaCmd = Get-Command java -ErrorAction SilentlyContinue }
@@ -464,7 +468,7 @@ function Show-Check {
     if ($script:Mysql) {
         Write-Host "  [OK] mysql  -> $($script:Mysql)"
         Test-RunningService | ForEach-Object { Write-Host "         servicio '$($_.Name)': $($_.Status)" }
-    } else { Write-Host "  [FALTA] mysql (reinstala MySQL Server o pasa -MySqlExe <ruta>)" -ForegroundColor Red; $script:CheckOk = $false }
+    } else { Write-Host "  [FALTA] mysql (reinstala MySQL Server o pasa -MySqlExe <ruta>)" -ForegroundColor Red; $script:CheckOk = $false; $script:DbOk = $false }
 
     $nodeCmd = Get-Command node.exe -ErrorAction SilentlyContinue
     if (-not $nodeCmd) { $nodeCmd = Get-Command node -ErrorAction SilentlyContinue }
@@ -510,7 +514,12 @@ function Show-Check {
     } else {
         Write-Host ""
         Write-Host "  Faltan requisitos. Detalle y solucion:" -ForegroundColor Yellow
-        Show-DiagnosticoBD
+        if ($script:DbOk) {
+            Write-Host "  La base de datos esta OK. Revisa los [X] de arriba." -ForegroundColor Yellow
+            Write-Host "  Lo habitual es la entrada de hosts de $($script:Sitio)." -ForegroundColor Yellow
+        } else {
+            Show-DiagnosticoBD
+        }
     }
 }
 
@@ -615,7 +624,9 @@ function Invoke-RunBackendFast {
     }
 }
 
-# Sirve .\frontend en :PUERTO_WEB y abre el navegador.
+# Sirve la raiz del proyecto en :PUERTO_WEB y abre el navegador. El index.html
+# vive en la raiz y referencia sus assets con rutas "frontend\...", por eso el
+# servidor se levanta desde $script:Root (no desde .\frontend).
 function Invoke-RunFrontend {
     Set-TituloVentana "TourInvest - Sitio :$($script:PuertoWeb)"
     if (-not $script:Python) {
@@ -634,9 +645,12 @@ function Invoke-RunFrontend {
 
     # El servidor se lanza como proceso hijo y se vigila, para que el sitio
     # quede apagado SIEMPRE que termina esta ventana.
+    # serve.py sirve la raiz del proyecto y bloquea rutas sensibles (.env, .git,
+    # backends...), a diferencia de `python -m http.server`.
+    $serve = Join-Path $script:Root "serve.py"
     $proc = Start-Process -FilePath $script:Python -NoNewWindow -PassThru `
-                -ArgumentList @("-m", "http.server", "$($script:PuertoWeb)", "--bind", $script:IpLoopback) `
-                -WorkingDirectory (Join-Path $script:Root "frontend")
+                -ArgumentList @("`"$serve`"", "$($script:PuertoWeb)", "--bind", $script:IpLoopback) `
+                -WorkingDirectory $script:Root
     try {
         while (-not $proc.HasExited) {
             if ($script:LanzadorId -gt 0 -and -not (Get-Process -Id $script:LanzadorId -ErrorAction SilentlyContinue)) { break }
@@ -746,17 +760,113 @@ function Start-All {
     }
 }
 
+# Ejecuta las 4 suites de pruebas del proyecto y sale con codigo 0/1.
+#   1) Backend Java (fuente de verdad)      -> mvn test   (JUnit 5 + Mockito)
+#   2) Backend Python (replica Flask)       -> unittest   (repos + API)
+#   3) Frontend JS (auth + graficas)        -> node       (assert + vm)
+#   4) Frontend estructura HTML/JS          -> unittest   (wiring de los dashboards)
+# Si falta una herramienta se avisa y se cuenta como suite fallida, pero el
+# resto de suites se ejecutan igual: asi se ve de una vez todo lo que passa.
+function Invoke-Tests {
+    Set-TituloVentana "TourInvest - Tests"
+    Write-Host "== TourInvest - suite de pruebas ==" -ForegroundColor Cyan
+    Write-Host "   Java (mvn) + backend-python + frontend JS + estructura HTML/JS." -ForegroundColor DarkGray
+    Write-Host ""
+
+    $nodeCmd = Get-Command node.exe -ErrorAction SilentlyContinue
+    if (-not $nodeCmd) { $nodeCmd = Get-Command node -ErrorAction SilentlyContinue }
+    $fallos = 0
+
+    # --- 1) Backend Java (fuente de verdad): mvn test ---
+    Write-Host "[1/4] Backend Java (Spring Boot + JUnit 5 + Mockito)" -ForegroundColor Cyan
+    if (-not $script:Mvn) {
+        Write-Host "  [X] Maven no encontrado. Instala Maven o pasa -MvnCmd <ruta>." -ForegroundColor Red
+        $fallos++
+    } else {
+        Push-Location (Join-Path $script:Root "backend-servlets")
+        try {
+            & $script:Mvn test
+            if ($LASTEXITCODE -ne 0) { Write-Host "  [X] Fallaron los tests de Java." -ForegroundColor Red; $fallos++ }
+            else { Write-Host "  [OK] Backend Java." -ForegroundColor Green }
+        } finally { Pop-Location }
+    }
+    Write-Host ""
+
+    # --- 2) Backend Python (replica): unittest ---
+    Write-Host "[2/4] Backend Python (replica Flask, unittest)" -ForegroundColor Cyan
+    if (-not $script:Python) {
+        Write-Host "  [X] Python no encontrado." -ForegroundColor Red
+        $fallos++
+    } else {
+        # Los tests de API necesitan Flask; si no esta se intenta instalar una
+        # vez (best-effort). Si no se puede, se marcan como 'skipped' y no falla.
+        & $script:Python -c "import flask" 2>&1 | Out-Null
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "  Instalando dependencias de backend-python (Flask)..." -ForegroundColor DarkGray
+            & $script:Python -m pip install -r (Join-Path $script:Root "backend-python\requirements.txt") | Out-Null
+        }
+        Push-Location $script:Root
+        try {
+            & $script:Python -m unittest discover -s backend-python\tests -t backend-python
+            if ($LASTEXITCODE -ne 0) { Write-Host "  [X] Fallaron los tests de backend-python." -ForegroundColor Red; $fallos++ }
+            else { Write-Host "  [OK] Backend Python." -ForegroundColor Green }
+        } finally { Pop-Location }
+    }
+    Write-Host ""
+
+    # --- 3) Frontend JS: node auth + graficas ---
+    Write-Host "[3/4] Frontend JS (validaciones auth + graficas, node)" -ForegroundColor Cyan
+    if (-not $nodeCmd) {
+        Write-Host "  [--] node no encontrado; se omiten los tests de JS (no bloquean)." -ForegroundColor Yellow
+    } else {
+        $jsOk = $true
+        foreach ($t in @("auth_validation_test.js", "graficas_test.js")) {
+            & $nodeCmd.Source (Join-Path $script:Root "frontend\tests\$t")
+            if ($LASTEXITCODE -ne 0) { Write-Host "  [X] Fallo $t" -ForegroundColor Red; $jsOk = $false }
+        }
+        if ($jsOk) { Write-Host "  [OK] Frontend JS." -ForegroundColor Green } else { $fallos++ }
+    }
+    Write-Host ""
+
+    # --- 4) Frontend estructura HTML/JS: unittest ---
+    Write-Host "[4/4] Frontend estructura HTML/JS (unittest)" -ForegroundColor Cyan
+    if (-not $script:Python) {
+        Write-Host "  [X] Python no encontrado." -ForegroundColor Red
+        $fallos++
+    } else {
+        Push-Location $script:Root
+        try {
+            & $script:Python -m unittest discover -s frontend\tests -p "test_*.py"
+            if ($LASTEXITCODE -ne 0) { Write-Host "  [X] Fallaron los tests de estructura del frontend." -ForegroundColor Red; $fallos++ }
+            else { Write-Host "  [OK] Frontend estructura." -ForegroundColor Green }
+        } finally { Pop-Location }
+    }
+    Write-Host ""
+
+    # --- Resumen ---
+    if ($fallos -eq 0) {
+        Write-Host "== TODAS LAS SUITES PASARON ==" -ForegroundColor Green
+        exit 0
+    } else {
+        Write-Host "== $fallos suite(s) fallaron ==" -ForegroundColor Red
+        exit 1
+    }
+}
+
 function Show-Help {
     Write-Host "Uso: .\setup.ps1 <comando>" -ForegroundColor Cyan
     Write-Host ""
     Write-Host "  check             Verifica java/mvn/mysql/node/python Y la conexion real a MySQL."
     Write-Host "                    Es el primer comando: si falla, dice exactamente que falta."
     Write-Host "  seed              Carga query.sql (raiz) en la base '$($script:DbName)'."
+    Write-Host "  test              Ejecuta las 4 suites de pruebas:"
+    Write-Host "                    Backend Java (mvn test), backend-python (unittest),"
+    Write-Host "                    frontend JS (node) y estructura HTML/JS (unittest)."
     Write-Host "  run-backend       Compila y ejecuta Spring Boot en :$($script:PuertoApi)."
     Write-Host "  run-backend-fast  Empaqueta el JAR y arranca con 'java -jar'."
     Write-Host "                    MUCHO mas rapido (~14s menos) porque se salta Maven."
     Write-Host "                    Reempaqueta solo si el codigo cambio."
-    Write-Host "  run-frontend      Sirve .\frontend en el puerto $($script:PuertoWeb) y abre el navegador."
+    Write-Host "  run-frontend      Sirve la raiz del proyecto en el puerto $($script:PuertoWeb) y abre el navegador."
     Write-Host "  run               ARRANCA EL PROYECTO COMPLETO: API :$($script:PuertoApi) + sitio :$($script:PuertoWeb)."
     Write-Host "                    Levanta los dos servidores y abre el navegador."
     Write-Host "                    Logs en logs\backend.log y logs\frontend.log."
@@ -790,6 +900,7 @@ function Show-Help {
 switch ($Action.ToLowerInvariant()) {
     "check"            { Show-Check;        exit ([int](-not $script:CheckOk)) }
     "seed"             { Invoke-Seed }
+    "test"             { Invoke-Tests }
     "run-backend"      { Invoke-RunBackend }
     "run-backend-fast" { Invoke-RunBackendFast }
     "run-frontend"     { Invoke-RunFrontend }

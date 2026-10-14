@@ -341,7 +341,7 @@ coinciden con los de los dashboards; Java arranca sobre MySQL.
   (el `AuthenticationConfiguration` degeneraba en recursión infinita → `StackOverflowError` → 403 opaco
   vía `/error`); `/error` en `permitAll`. Login validado E2E contra MySQL (hashes BCrypt `$2b$`).
 - JDBC: `allowPublicKeyRetrieval=true` (MySQL 8/9 con `useSSL=false`).
-- Datos de prueba sembrados (posición Apple/MSFT y alertas Cumplida/Activa) para que las
+- Datos de prueba sembrados (posiciones GHL/DEC y alertas Cumplida/Activa) para que las
   pantallas tengan contenido en las capturas.
 - `styles.css`: añadidos `.btn`/`.btn-link` (botones del modal salían sin estilo: solo
   existían en `real_theme.css`, que los dashboards no cargan) y `.etiqueta-variacion--positiva/negativa`
@@ -359,7 +359,7 @@ coinciden con los de los dashboards; Java arranca sobre MySQL.
   Precio/Variación) + botón "+ Crear empresa" + modal crear/editar + Eliminar con confirmación.
   `dashboard_administrador.js` cableado (cargar/guardar/eliminar + toasts). `node --check` OK.
 - Validado E2E contra la API: crear→listar→editar→eliminar; laura (Analista)→403 al crear;
-  DELETE Apple → 400 "tiene inversiones de usuarios asociadas" y Apple intacta.
+  DELETE GHL Hoteles → 400 "tiene inversiones de usuarios asociadas" y GHL intacta.
 
 ---
 

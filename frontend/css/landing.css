@@ -23,14 +23,42 @@ body {
     border-bottom: 1px solid rgba(28, 43, 28, 0.1);
 }
 
+/* Asegurar posicionamiento relativo en el contenedor de la barra */
 .landing-nav__inner {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 14px 18px;
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 14px;
+}
+
+/* Contenedor del mapa del sitio como elemento flotante */
+.landing-mapa {
+    position: relative;
+}
+
+/* El contenido del mapa se despliega flotando sin alterar el layout principal */
+.landing-mapa[open] .landing-rutas {
+    position: absolute;
+    top: calc(100% + 10px);
+    left: 0;
+    z-index: 1000;
+    background: #ffffff; /* Ajusta según el fondo de tu nav */
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    padding: 1rem;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(200px, 1fr)); /* O el diseño que prefieras */
+    gap: 1rem;
+    width: max-content;
+    max-width: 90vw;
+}
+
+/* Asegurar que los enlaces de navegación no se oculten */
+.landing-nav__links {
+    display: flex;
+    gap: 1.5rem;
+    align-items: center;
 }
 
 .landing-brand {
@@ -609,4 +637,83 @@ main>section:first-child {
         align-items: flex-start;
         justify-content: space-between;
     }
+}
+/* =========================================================
+   Mapa de rutas del proyecto (sección #rutas)
+   ========================================================= */
+.landing-rutas {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin-top: 16px;
+}
+
+/* Mapa del sitio plegable: cerrado por defecto; solo se muestra al pulsar el
+   resumen "Mapa del sitio" (elemento <details> nativo, sin JS). */
+.landing-mapa {
+    margin-top: 5px;
+    border: 1px solid rgba(29, 74, 43, 0.14);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.45);
+    padding: 6px 18px;
+}
+
+.landing-mapa__toggle {
+    cursor: pointer;
+    padding: 12px 0;
+    font-weight: 500;
+    color: var(--li-green);
+    font-size: 16px;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.landing-mapa__toggle::-webkit-details-marker {
+    display: none;
+}
+
+.landing-mapa__toggle::before {
+
+    color: var(--li-gold);
+    font-size: 18px;
+    transition: transform 0.15s;
+}
+
+.landing-mapa .landing-rutas {
+    margin-top: 6px;
+    margin-bottom: 14px;
+}
+
+.landing-ruta {
+    background: rgba(255, 255, 255, 0.6);
+    border: 1px solid rgba(29, 74, 43, 0.12);
+    border-radius: 16px;
+    padding: 20px;
+}
+
+.landing-ruta h3 {
+    margin: 0 0 10px;
+    font-size: 16px;
+    color: var(--li-green);
+}
+
+.landing-ruta ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.landing-ruta li {
+    font-size: 13px;
+    color: var(--li-text);
+    line-height: 1.5;
+}
+
+.landing-ruta b {
+    color: var(--li-green);
 }

@@ -6,9 +6,22 @@
   <title>TourInvest | Dashboard Administrador</title>
   <link rel="icon" type="image/png" href="../assets/imgs/tourinvest.jpeg">
   <link rel="stylesheet" href="../css/styles.css?v=2">
+  <script>
+    // Aplica el tema antes del primer pintado para evitar el flash blanco.
+    (function () {
+      try {
+        var pref = localStorage.getItem('ti_tema') || 'sistema';
+        var tema = (pref === 'diurno' || pref === 'nocturno') ? pref
+          : (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'nocturno' : 'diurno');
+        document.documentElement.setAttribute('data-theme', tema);
+      } catch (e) { /* sin localStorage */ }
+    })();
+  </script>
   <script src="../js/app.js" defer></script> 
   <script src="../js/api.js" defer></script>
+  <script src="../js/configuracion.js" defer></script>
   <script src="../js/perfil.js" defer></script>
+  <script src="../js/colombia.js" defer></script>
   <script src="../js/dashboard_administrador.js" defer></script>
   <script src="../js/usuarios.js" defer></script>
 </head>
@@ -16,8 +29,9 @@
   <div class="app-layout">
     <aside class="sidebar">
       <div class="brand">
-        <div aria-hidden="true"><img class="logo-circle" src="../assets/imgs/tourinvest.png" alt="TourInvest"></div>
-        <span>TourInvest</span>
+        <div class="brand__logo" aria-hidden="true"><img class="logo-circle" src="../assets/imgs/tourinvest.png" alt="TourInvest"></div>
+        <span class="brand__name">TourInvest</span>
+        <button id="btn-toggle-sidebar" class="sidebar-toggle" type="button" aria-label="Alternar menú lateral">☰</button>
       </div>
       <nav aria-label="Navegación de administrador">
         <a href="#usuarios" class="sidebar__link sidebar__link--activo" data-vista="usuarios">Usuarios</a>
@@ -25,14 +39,15 @@
         <a href="#roles" class="sidebar__link" data-vista="roles">Roles</a>
         <a href="#auditorias" class="sidebar__link" data-vista="auditorias">Auditorías</a>
         <a href="#configuracion" class="sidebar__link" data-vista="configuracion">Configuración</a>
+        <a href="#colombia" class="sidebar__link" data-vista="colombia">Colombia</a>
       </nav>
-      <div class="logout"><a href="../../index.html">Cerrar sesión</a></div>
+      <div class="logout"><a href="javascript:cerrarSesion()">Cerrar sesión</a></div>
     </aside>
 
     <main class="main-content">
       <header class="top-header" aria-label="Encabezado de la plataforma">
-        <div class="top-header__inner">
-          <button class="top-header__brand top-header__brand--home" type="button" onclick="location.href='../index.html'">
+        <div class="top-header__inner top-header__inner--con-toggle">
+          <button class="top-header__brand top-header__brand--home" type="button" onclick="TourInvestUI.SalirAlInicio()">
             <img class="top-header__logo" src="../assets/imgs/tourinvest.png" alt="TourInvest logo">
             <div class="top-header__titles">
               <h1>TourInvest</h1>
@@ -129,6 +144,36 @@
             <p><strong>Fecha de nacimiento:</strong> <span id="perfil-nacimiento">—</span></p>
             <p><strong>Registrado el:</strong> <span id="perfil-registro">—</span></p>
             <button class="btn-primary" type="button" style="width: auto; padding: 10px 16px; margin-top: 10px;" onclick="TourInvestUI.Perfil.abrirModal()">Editar mi perfil</button>
+            <hr style="margin: 22px 0; border: none; border-top: 1px solid var(--border);">
+            <h3>Apariencia</h3>
+            <p class="muted">Elige el tema de la plataforma. «Sistema» sigue la configuración de tu equipo.</p>
+            <div class="tema-selector" role="group" aria-label="Selector de tema">
+              <button type="button" class="tema-btn" data-tema-btn="diurno">Diurno</button>
+              <button type="button" class="tema-btn" data-tema-btn="nocturno">Nocturno</button>
+              <button type="button" class="tema-btn" data-tema-btn="sistema">Sistema</button>
+            </div>
+            <hr style="margin: 22px 0; border: none; border-top: 1px solid var(--border);">
+            <h3>Legales</h3>
+            <p class="muted">Documentos que rigen el uso de la plataforma.</p>
+            <div class="legales-lista">
+              <button type="button" onclick="TourInvestUI.Configuracion.abrir('tratamiento')">Política de tratamiento de datos</button>
+              <button type="button" onclick="TourInvestUI.Configuracion.abrir('privacidad')">Política de privacidad</button>
+              <button type="button" onclick="TourInvestUI.Configuracion.abrir('terminos')">Términos y condiciones</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="vista" data-vista-panel="colombia">
+          <div class="panel">
+            <h3>Explora Colombia</h3>
+            <p class="muted">Datos oficiales de los 33 departamentos: región, población, superficie y atracciones turísticas reales. Fuente: API pública de Colombia (api-colombia.com).</p>
+            <div class="colombia-selector">
+              <label for="selector-departamento">Departamento</label>
+              <select id="selector-departamento" onchange="mostrarDepartamento(this.value)">
+                <option value="">Cargando…</option>
+              </select>
+            </div>
+            <div id="colombia-contenido"></div>
           </div>
         </section>
 
@@ -157,14 +202,21 @@
           </div>
           <div class="field">
             <label for="empresa-sector">Sector</label>
-            <input type="text" id="empresa-sector" name="sector" maxlength="80" required>
+            <input type="text" id="empresa-sector" name="sector" list="sectores-turismo" maxlength="80" required>
+            <datalist id="sectores-turismo">
+              <option value="Hotelería">
+              <option value="Agencia de viajes">
+              <option value="Transporte aéreo">
+              <option value="Turismo">
+              <option value="Hospedaje">
+            </datalist>
           </div>
           <div class="field">
             <label for="empresa-pais">País</label>
-            <input type="text" id="empresa-pais" name="pais" maxlength="80" required>
+            <input type="text" id="empresa-pais" name="pais" value="Colombia" readonly>
           </div>
           <div class="field">
-            <label for="empresa-precio">Precio actual (USD)</label>
+            <label for="empresa-precio">Precio actual (COP)</label>
             <input type="number" step="0.01" min="0.01" id="empresa-precio" name="precio" required>
           </div>
           <button type="submit" class="btn-primary">Guardar empresa</button>

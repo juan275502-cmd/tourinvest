@@ -14,64 +14,29 @@ let tipoActivoAlertas = null;      // getter del tipo elegido en alertas
 
 let empresasCache = [];
 
-function obtenerToken() {
-  const token = sessionStorage.getItem("tourinvest_token");
-  if (!token) {
-    window.location.href = "login.html";
-    return null;
-  }
-  return token;
-}
-
-async function llamarApi(ruta, opciones = {}) {
-  const token = obtenerToken();
-  if (!token) return null;
-
-  const respuesta = await fetch(`${API_BASE_URL}${ruta}`, {
-    ...opciones,
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-      ...(opciones.headers || {}),
-    },
-  });
-
-  if (respuesta.status === 401) {
-    sessionStorage.clear();
-    window.location.href = "login.html";
-    return null;
-  }
-
-  return respuesta;
-}
-
-function formatearMoneda(valor) {
-  return new Intl.NumberFormat("es-CO", { style: "currency", currency: "USD", minimumFractionDigits: 2 }).format(valor);
-}
-
-function formatearPorcentaje(valor) {
-  const signo = valor >= 0 ? "+" : "";
-  return `${signo}${Number(valor).toFixed(2)}%`;
-}
+// obtenerToken(), llamarApi(), formatearMoneda() y formatearPorcentaje() NO se
+// redefinen aquí: ya vienen de window.TourInvestUI.Api (js/api.js) mediante el
+// destructuring de arriba. Redeclar 'obtenerToken'/'llamarApi' con el mismo
+// nombre era un SyntaxError que impedía cargar TODO el archivo (panel en blanco,
+// sin usuarios y sin poder cerrar sesión).
 
 // ---------- Navegación entre vistas ----------
 
 function inicializarNavegacion() {
-  const enlaces = document.querySelectorAll(".sidebar__link[data-vista]");
-  const vistas = document.querySelectorAll(".vista[data-vista-panel]");
-
-  enlaces.forEach((enlace) => {
-    enlace.addEventListener("click", () => {
-      const destino = enlace.dataset.vista;
-
-      enlaces.forEach((e) => e.classList.toggle("sidebar__link--activo", e === enlace));
-      vistas.forEach((v) => v.classList.toggle("vista--activa", v.dataset.vistaPanel === destino));
-
-      if (destino === "empresas" && empresasCache.length === 0) cargarEmpresas();
-      if (destino === "alertas") cargarAlertas();
-    });
+  // Persistencia del panel activo (hash + localStorage por rol): al refrescar
+  // se restaura el mismo panel; `mostrar` dispara las cargas diferidas.
+  window.TourInvestUI.Navegacion.inicializar((destino) => {
+    if (destino === "empresas" && empresasCache.length === 0) cargarEmpresas();
+    if (destino === "alertas") cargarAlertas();
+    if (destino === "colombia") cargarVistaColombia();
   });
 }
+
+// ---------- Vista: Colombia (API api-colombia.com) ----------
+// La carga y el render de la vista "Colombia" viven en js/colombia.js y se
+// exponen como GLOBALES (window.cargarVistaColombia / window.mostrarDepartamento),
+// compartidos por los TRES paneles (inversionista, analista, administrador).
+// Antes había una copia local aquí; se unificó en un solo lugar.
 
 // ---------- Vista: Portafolio ----------
 
@@ -237,6 +202,17 @@ async function abrirDetalleEmpresa(idEmpresa) {
   document.getElementById("form-agregar-portafolio").dataset.idAccion = detalle.idAccion;
   document.getElementById("form-crear-alerta").dataset.idAccion = detalle.idAccion;
 
+  // Contexto de Colombia (API api-colombia.com): región, población y
+  // atracciones turísticas reales del departamento asociado a la empresa.
+  // Se pinta en su propio contenedor y NUNCA bloquea la apertura del modal.
+  const contColombia = document.getElementById("modal-empresa-colombia");
+  if (contColombia && window.TourInvestUI && window.TourInvestUI.Colombia) {
+    contColombia.innerHTML = `<div class="colombia-cargando">Cargando datos de Colombia…</div>`;
+    window.TourInvestUI.Colombia.enriquecerEmpresa(detalle.nombre, (html) => {
+      contColombia.innerHTML = html;
+    });
+  }
+
   ocultarSubformularios();
   const modal = document.getElementById("modal-empresa");
   modal.classList.add("modal--open");
@@ -400,7 +376,7 @@ function cargarPerfil() {
 
 function cerrarSesion() {
   sessionStorage.clear();
-  window.location.href = "login.html";
+  window.location.href = "../../index.html";
 }
 
 // ---------- Arranque ----------

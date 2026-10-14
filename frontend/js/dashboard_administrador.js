@@ -3,51 +3,20 @@
 const { obtenerToken, llamar: llamarApi, moneda: formatearMoneda,
   porcentaje: formatearPorcentaje, esc } = window.TourInvestUI.Api;
 
-function obtenerToken() {
-  const token = sessionStorage.getItem("tourinvest_token");
-  if (!token) {
-    window.location.href = "login.html";
-    return null;
-  }
-  return token;
-}
-
-async function llamarApi(ruta, opciones = {}) {
-  const token = obtenerToken();
-  if (!token) return null;
-
-  const respuesta = await fetch(`${API_BASE_URL}${ruta}`, {
-    ...opciones,
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-      ...(opciones.headers || {}),
-    },
-  });
-
-  if (respuesta.status === 401) {
-    sessionStorage.clear();
-    window.location.href = "login.html";
-    return null;
-  }
-
-  return respuesta;
-}
+// obtenerToken(), llamarApi(), formatearMoneda() y formatearPorcentaje() NO se
+// redefinen aquí: ya vienen de window.TourInvestUI.Api (js/api.js) mediante el
+// destructuring de arriba. Redeclar 'obtenerToken'/'llamarApi' con el mismo
+// nombre era un SyntaxError que impedía cargar TODO el archivo (panel en blanco,
+// sin usuarios y sin poder cerrar sesión).
 
 // ---------- Navegación entre vistas ----------
 
 function inicializarNavegacion() {
-  const enlaces = document.querySelectorAll(".sidebar__link[data-vista]");
-  const vistas = document.querySelectorAll(".vista[data-vista-panel]");
-
-  enlaces.forEach((enlace) => {
-    enlace.addEventListener("click", () => {
-      const destino = enlace.dataset.vista;
-      enlaces.forEach((e) => e.classList.toggle("sidebar__link--activo", e === enlace));
-      vistas.forEach((v) => v.classList.toggle("vista--activa", v.dataset.vistaPanel === destino));
-
-      if (destino === "empresas") cargarEmpresasAdmin();
-    });
+  // Persistencia del panel activo (hash + localStorage por rol): al refrescar
+  // se restaura el mismo panel; `mostrar` dispara las cargas diferidas.
+  window.TourInvestUI.Navegacion.inicializar((destino) => {
+    if (destino === "empresas") cargarEmpresasAdmin();
+    if (destino === "colombia") cargarVistaColombia();
   });
 }
 
@@ -171,14 +140,7 @@ function eliminarUsuario(idUsuario, nombre) {
 let empresasAdminCache = [];
 let empresaEditandoId = null;
 
-function formatearMoneda(valor) {
-  return new Intl.NumberFormat("es-CO", { style: "currency", currency: "USD", minimumFractionDigits: 2 }).format(valor);
-}
-
-function formatearPorcentaje(valor) {
-  const signo = valor >= 0 ? "+" : "";
-  return `${signo}${Number(valor).toFixed(2)}%`;
-}
+// formatearMoneda() y formatearPorcentaje() vienen de window.TourInvestUI.Api.
 
 async function cargarEmpresasAdmin() {
   const cuerpoTabla = document.getElementById("tabla-empresas-admin-cuerpo");

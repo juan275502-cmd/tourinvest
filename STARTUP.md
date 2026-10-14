@@ -7,6 +7,7 @@ independiente y documenta su propio sistema: no mezcles comandos de uno con el o
 |---|---|---|
 | Diagnóstico | `.\setup.ps1 check` | `./setup.sh check` |
 | Crear la BD | `.\setup.ps1 seed` | `./setup.sh seed` |
+| **Probar todo** | **`.\setup.ps1 test`** | **`./setup.sh test`** |
 | **Proyecto completo** | **`.\setup.ps1 run`** | **`./setup.sh run`** |
 | Solo la API `:8080` | `.\setup.ps1 run-backend` | `./setup.sh run-backend` |
 | Solo el sitio (puerto 80) | `.\setup.ps1 run-frontend` | `./setup.sh run-frontend` |

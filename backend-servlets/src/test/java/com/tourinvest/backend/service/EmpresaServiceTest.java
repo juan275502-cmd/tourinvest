@@ -46,35 +46,35 @@ class EmpresaServiceTest {
 
     private EmpresaService empresaService;
 
-    private Empresa apple;
-    private Accion accionApple;
+    private Empresa ghl;
+    private Accion accionGhl;
 
     @BeforeEach
     void setUp() {
         empresaService = new EmpresaService(empresaRepository, accionRepository,
                 inversionRepository, alertaRepository);
 
-        apple = new Empresa();
-        apple.setIdEmpresa(1);
-        apple.setNombre("Apple");
-        apple.setSimbolo("AAPL");
-        apple.setSector("Tecnología");
-        apple.setPais("Estados Unidos");
+        ghl = new Empresa();
+        ghl.setIdEmpresa(1);
+        ghl.setNombre("GHL Hoteles");
+        ghl.setSimbolo("GHL");
+        ghl.setSector("Hotelería");
+        ghl.setPais("Colombia");
 
-        accionApple = new Accion();
-        accionApple.setIdAccion(1);
-        accionApple.setEmpresa(apple);
-        accionApple.setPrecio(new BigDecimal("195.50"));
-        accionApple.setVariacion(new BigDecimal("1.80"));
-        accionApple.setFechaActualizacion(LocalDateTime.now());
+        accionGhl = new Accion();
+        accionGhl.setIdAccion(1);
+        accionGhl.setEmpresa(ghl);
+        accionGhl.setPrecio(new BigDecimal("195.50"));
+        accionGhl.setVariacion(new BigDecimal("1.80"));
+        accionGhl.setFechaActualizacion(LocalDateTime.now());
     }
 
     private EmpresaRequest request(String nombre, String simbolo, String precio) {
         EmpresaRequest r = new EmpresaRequest();
         r.setNombre(nombre);
         r.setSimbolo(simbolo);
-        r.setSector("Tecnología");
-        r.setPais("Estados Unidos");
+        r.setSector("Hotelería");
+        r.setPais("Colombia");
         r.setPrecio(new BigDecimal(precio));
         return r;
     }
@@ -84,14 +84,14 @@ class EmpresaServiceTest {
     @Test
     @DisplayName("listarTodas: con cotización disponible, incluye precio y variación")
     void listarTodas_conCotizacion_incluyePrecioYVariacion() {
-        when(empresaRepository.findAll()).thenReturn(List.of(apple));
+        when(empresaRepository.findAll()).thenReturn(List.of(ghl));
         when(accionRepository.findFirstByEmpresa_IdEmpresaOrderByFechaActualizacionDesc(1))
-                .thenReturn(Optional.of(accionApple));
+                .thenReturn(Optional.of(accionGhl));
 
         List<EmpresaResumenDTO> resultado = empresaService.listarTodas();
 
         assertThat(resultado).hasSize(1);
-        assertThat(resultado.get(0).getSimbolo()).isEqualTo("AAPL");
+        assertThat(resultado.get(0).getSimbolo()).isEqualTo("GHL");
         assertThat(resultado.get(0).getPrecioActual()).isEqualByComparingTo("195.50");
         assertThat(resultado.get(0).getVariacion()).isEqualByComparingTo("1.80");
     }
@@ -99,7 +99,7 @@ class EmpresaServiceTest {
     @Test
     @DisplayName("listarTodas: sin cotización registrada todavía, precio y variación quedan en null (no lanza excepción)")
     void listarTodas_sinCotizacion_devuelvePrecioNuloSinFallar() {
-        when(empresaRepository.findAll()).thenReturn(List.of(apple));
+        when(empresaRepository.findAll()).thenReturn(List.of(ghl));
         when(accionRepository.findFirstByEmpresa_IdEmpresaOrderByFechaActualizacionDesc(1))
                 .thenReturn(Optional.empty());
 
@@ -125,14 +125,14 @@ class EmpresaServiceTest {
     @Test
     @DisplayName("obtenerDetalle: con empresa y cotización existentes, devuelve todos los campos del mockup")
     void obtenerDetalle_empresaYCotizacionExistentes_devuelveDetalleCompleto() {
-        when(empresaRepository.findById(1)).thenReturn(Optional.of(apple));
+        when(empresaRepository.findById(1)).thenReturn(Optional.of(ghl));
         when(accionRepository.findFirstByEmpresa_IdEmpresaOrderByFechaActualizacionDesc(1))
-                .thenReturn(Optional.of(accionApple));
+                .thenReturn(Optional.of(accionGhl));
 
         EmpresaDetalleDTO resultado = empresaService.obtenerDetalle(1);
 
-        assertThat(resultado.getNombre()).isEqualTo("Apple");
-        assertThat(resultado.getPais()).isEqualTo("Estados Unidos");
+        assertThat(resultado.getNombre()).isEqualTo("GHL Hoteles");
+        assertThat(resultado.getPais()).isEqualTo("Colombia");
         assertThat(resultado.getPrecio()).isEqualByComparingTo("195.50");
         assertThat(resultado.getIdAccion()).isEqualTo(1);
     }
@@ -150,7 +150,7 @@ class EmpresaServiceTest {
     @Test
     @DisplayName("obtenerDetalle: con empresa existente pero sin cotización, lanza NoSuchElementException")
     void obtenerDetalle_sinCotizacion_lanzaNoSuchElementException() {
-        when(empresaRepository.findById(1)).thenReturn(Optional.of(apple));
+        when(empresaRepository.findById(1)).thenReturn(Optional.of(ghl));
         when(accionRepository.findFirstByEmpresa_IdEmpresaOrderByFechaActualizacionDesc(1))
                 .thenReturn(Optional.empty());
 
@@ -188,9 +188,9 @@ class EmpresaServiceTest {
     @Test
     @DisplayName("crear: con símbolo duplicado lanza IllegalArgumentException")
     void crear_conSimboloDuplicado_lanzaExcepcion() {
-        when(empresaRepository.existsBySimbolo("AAPL")).thenReturn(true);
+        when(empresaRepository.existsBySimbolo("GHL")).thenReturn(true);
 
-        assertThatThrownBy(() -> empresaService.crear(request("Apple CL", "aapl", "50.00")))
+        assertThatThrownBy(() -> empresaService.crear(request("GHL Hoteles CL", "ghl", "50.00")))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("símbolo");
     }
@@ -200,26 +200,26 @@ class EmpresaServiceTest {
     @Test
     @DisplayName("actualizar: modifica la empresa y actualiza el precio de la cotización")
     void actualizar_conDatosValidos_actualizaEmpresaYPrecio() {
-        when(empresaRepository.findById(1)).thenReturn(Optional.of(apple));
-        when(empresaRepository.existsBySimboloAndIdEmpresaNot("AAPL", 1)).thenReturn(false);
+        when(empresaRepository.findById(1)).thenReturn(Optional.of(ghl));
+        when(empresaRepository.existsBySimboloAndIdEmpresaNot("GHL", 1)).thenReturn(false);
         when(accionRepository.findFirstByEmpresa_IdEmpresaOrderByFechaActualizacionDesc(1))
-                .thenReturn(Optional.of(accionApple));
+                .thenReturn(Optional.of(accionGhl));
         when(empresaRepository.save(any(Empresa.class))).thenAnswer(inv -> inv.getArgument(0));
         when(accionRepository.save(any(Accion.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        EmpresaDetalleDTO resultado = empresaService.actualizar(1, request("Apple", "AAPL", "210.00"));
+        EmpresaDetalleDTO resultado = empresaService.actualizar(1, request("GHL Hoteles", "GHL", "210.00"));
 
         assertThat(resultado.getPrecio()).isEqualByComparingTo("210.00");
-        assertThat(resultado.getSector()).isEqualTo("Tecnología");
+        assertThat(resultado.getSector()).isEqualTo("Hotelería");
     }
 
     @Test
     @DisplayName("actualizar: con símbolo usado por otra empresa lanza IllegalArgumentException")
     void actualizar_conSimboloDeOtraEmpresa_lanzaExcepcion() {
-        when(empresaRepository.findById(1)).thenReturn(Optional.of(apple));
-        when(empresaRepository.existsBySimboloAndIdEmpresaNot("MSFT", 1)).thenReturn(true);
+        when(empresaRepository.findById(1)).thenReturn(Optional.of(ghl));
+        when(empresaRepository.existsBySimboloAndIdEmpresaNot("DEC", 1)).thenReturn(true);
 
-        assertThatThrownBy(() -> empresaService.actualizar(1, request("Apple", "MSFT", "210.00")))
+        assertThatThrownBy(() -> empresaService.actualizar(1, request("GHL Hoteles", "DEC", "210.00")))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("símbolo");
     }
@@ -229,8 +229,8 @@ class EmpresaServiceTest {
     @Test
     @DisplayName("eliminar: con inversiones asociadas se bloquea (protección de datos)")
     void eliminar_conInversionesAsociadas_seBloquea() {
-        when(empresaRepository.findById(1)).thenReturn(Optional.of(apple));
-        when(accionRepository.findByEmpresa_IdEmpresa(1)).thenReturn(List.of(accionApple));
+        when(empresaRepository.findById(1)).thenReturn(Optional.of(ghl));
+        when(accionRepository.findByEmpresa_IdEmpresa(1)).thenReturn(List.of(accionGhl));
         when(inversionRepository.existsByAccion_IdAccion(1)).thenReturn(true);
 
         assertThatThrownBy(() -> empresaService.eliminar(1))
@@ -241,8 +241,8 @@ class EmpresaServiceTest {
     @Test
     @DisplayName("eliminar: con alertas asociadas se bloquea")
     void eliminar_conAlertasAsociadas_seBloquea() {
-        when(empresaRepository.findById(1)).thenReturn(Optional.of(apple));
-        when(accionRepository.findByEmpresa_IdEmpresa(1)).thenReturn(List.of(accionApple));
+        when(empresaRepository.findById(1)).thenReturn(Optional.of(ghl));
+        when(accionRepository.findByEmpresa_IdEmpresa(1)).thenReturn(List.of(accionGhl));
         when(inversionRepository.existsByAccion_IdAccion(1)).thenReturn(false);
         when(alertaRepository.existsByAccion_IdAccion(1)).thenReturn(true);
 
@@ -254,14 +254,14 @@ class EmpresaServiceTest {
     @Test
     @DisplayName("eliminar: sin referencias, borra cotizaciones y empresa")
     void eliminar_sinReferencias_borraAccionesYEmpresa() {
-        when(empresaRepository.findById(1)).thenReturn(Optional.of(apple));
-        when(accionRepository.findByEmpresa_IdEmpresa(1)).thenReturn(List.of(accionApple));
+        when(empresaRepository.findById(1)).thenReturn(Optional.of(ghl));
+        when(accionRepository.findByEmpresa_IdEmpresa(1)).thenReturn(List.of(accionGhl));
         when(inversionRepository.existsByAccion_IdAccion(1)).thenReturn(false);
         when(alertaRepository.existsByAccion_IdAccion(1)).thenReturn(false);
 
         empresaService.eliminar(1);
 
-        verify(accionRepository).deleteAll(List.of(accionApple));
-        verify(empresaRepository).delete(apple);
+        verify(accionRepository).deleteAll(List.of(accionGhl));
+        verify(empresaRepository).delete(ghl);
     }
 }

@@ -11,9 +11,10 @@ documentos fuente (`arquitectura.md`, `navegacion.md`, `prototipos.md`,
 
 ```
 tourinvest/
+├── index.html                    # Landing (raiz; el servidor web se levanta desde aqui)
 ├── frontend/                     # HTML + CSS (Presentation)
 │   ├── css/styles.css            # Paleta: #1E3A5F, #2E8B57, #FFFFFF + responsive
-│   ├── index.html                # Landing
+│   ├── assets/                   # imagenes (logos, fotos de la landing)
 │   ├── js/                       # auth, api, dashboards, perfil, usuarios, graficas
 │   └── view/
 │       ├── login.html            # RF01 - Autenticar usuario
@@ -63,9 +64,9 @@ y persiste el token en `sessionStorage`. Se sirve con `setup.ps1 run` (Windows) 
 
 | Rol | Correo | Contraseña |
 |---|---|---|
-| Administrador | kike@tourinvest.com | 123456 |
-| Analista | marlen@tourinvest.com | 123456 |
-| Inversionista | juan@tourinvest.com | 123456 |
+| Administrador | k********@******** | ************ |
+| Analista | m**********@******** | ************ |
+| Inversionista | j********@******* | *********** |
 
 ### 2. Backend Java Spring Boot (API REST canónica — :8080)
 Requiere MySQL corriendo y la base `tourinvest` (`query.sql`):
@@ -157,6 +158,15 @@ mayúsculas; al menos 2 números."*
   automáticamente entre `hoy − 18 años` y ayer.
 
 ### Pruebas
+
+Todo con un único comando (ejecuta las 4 suites y sale con código 0/1):
+
+```bash
+.\setup.ps1 test    # Windows
+./setup.sh test     # Linux
+```
+
+O suite por suite, si prefieres:
 
 ```bash
 cd backend-servlets && mvn test                                # JUnit 5 + Mockito (ver "Tests run" en la salida)

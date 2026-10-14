@@ -938,7 +938,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"idEmpresa\": 1,\n  \"titulo\": \"Análisis Q3 - Apple\",\n  \"descripcion\": \"Proyecciones positivas para el siguiente trimestre.\"\n}"
+              "raw": "{\n  \"idEmpresa\": 1,\n  \"titulo\": \"Análisis Q3 - GHL Hoteles\",\n  \"descripcion\": \"Proyecciones positivas para el siguiente trimestre.\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/analista/reportes",
